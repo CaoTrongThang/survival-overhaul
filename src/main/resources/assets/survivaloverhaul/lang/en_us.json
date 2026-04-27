@@ -1,0 +1,6 @@
+{
+    "item.survivaloverhaul.purified_water": "Purified Water Bottle",
+    "item.survivaloverhaul.purified_water_bucket": "Purified Water Bucket",
+    "effect.survivaloverhaul.thirst": "Thirst",
+    "category.survivaloverhaul.thirst": "Thirst"
+}

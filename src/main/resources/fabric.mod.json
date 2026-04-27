@@ -1,0 +1,40 @@
+{
+	"schemaVersion": 1,
+	"id": "survivaloverhaul",
+	"version": "${version}",
+	"name": "Survival Overhaul",
+	"description": "",
+	"authors": [
+		"TrongThang"
+	],
+	"contact": {
+		"homepage": "",
+		"sources": ""
+	},
+	"license": "MIT",
+	"icon": "assets/survivaloverhaul/icon.png",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"com.trongthang.survivaloverhaul.SurvivalOverhaul"
+		],
+		"client": [
+			"com.trongthang.survivaloverhaul.SurvivalOverhaulClient"
+		],
+		"fabric-datagen": [
+			"com.trongthang.survivaloverhaul.SurvivalOverhaulDataGenerator"
+		]
+	},
+	"mixins": [
+		"survivaloverhaul.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.2",
+		"minecraft": "~1.20.1",
+		"java": ">=17",
+		"fabric-api": "*"
+	},
+	"suggests": {
+		"another-mod": "*"
+	}
+}
