@@ -11,7 +11,7 @@ public class HardFallingEffect extends StatusEffect {
 
     @Override
     public void applyUpdateEffect(LivingEntity entity, int amplifier) {
-        // Fall damage amplification is applied in PlayerEntityMixin via
+        // Fall damage amplification is applied in LivingEntityMixin via
         // @ModifyVariable.
         // This effect class exists so the icon is shown in the HUD.
     }

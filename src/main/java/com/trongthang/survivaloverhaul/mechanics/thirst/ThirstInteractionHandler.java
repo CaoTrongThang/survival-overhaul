@@ -90,7 +90,7 @@ public class ThirstInteractionHandler {
                 float thirstToAdd = drinkingRain ? ModConfig.thirstFromRain : ModConfig.thirstFromWater;
                 thirstManager.add((int) thirstToAdd, thirstToAdd * 0.05f);
 
-                if (drinkingWater && !isPurified
+                if (!drinkingRain && !isPurified
                         && world.random.nextFloat() < ModConfig.dehydrationChanceFromSources) {
                     player.addStatusEffect(new StatusEffectInstance(ModEffects.THIRST, 400, 0));
                 }

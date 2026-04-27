@@ -1,7 +1,7 @@
 package com.trongthang.survivaloverhaul.client.hud;
 
-import com.trongthang.survivaloverhaul.client.ClientBodyDamageManager;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
+import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.Identifier;
@@ -35,7 +35,13 @@ public class BodyDamageHud {
     }
 
     private static void drawLimb(DrawContext context, int xBase, int yBase, BodyPart part) {
-        float healthRatio = ClientBodyDamageManager.getHealth(part) / part.getMaxHealth();
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client.player == null)
+            return;
+
+        IBodyDamageData data = (IBodyDamageData) client.player;
+        float health = data.survivalOverhaul$getBodyDamageManager().getHealth(part);
+        float healthRatio = health / part.getMaxHealth();
 
         int conditionX = 0;
         if (healthRatio <= 0.0f)

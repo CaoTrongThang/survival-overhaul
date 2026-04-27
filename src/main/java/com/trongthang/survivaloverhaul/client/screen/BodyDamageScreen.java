@@ -1,8 +1,8 @@
 package com.trongthang.survivaloverhaul.client.screen;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.trongthang.survivaloverhaul.client.ClientBodyDamageManager;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
+import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import com.trongthang.survivaloverhaul.networking.NetworkingConstants;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
@@ -84,8 +84,14 @@ public class BodyDamageScreen extends Screen {
         drawHealthBar(context, leftPos + 118, topPos + 80, BodyPart.RIGHT_ARM);
         drawHealthBar(context, leftPos + 39, topPos + 134, BodyPart.LEFT_LEG);
         drawHealthBar(context, leftPos + 106, topPos + 134, BodyPart.RIGHT_LEG);
-        // No separate health bar for feet — too small; condition is visible via the
-        // limb sprite.
+
+        // Foot health bars
+        drawHealthBar(context, leftPos + 39, topPos + 156, BodyPart.LEFT_FOOT);
+        drawHealthBar(context, leftPos + 106, topPos + 156, BodyPart.RIGHT_FOOT);
+
+        // Debugging logs to console if needed (remove after verified)
+        // System.out.println("Left Foot Health: " +
+        // ClientBodyDamageManager.getHealth(BodyPart.LEFT_FOOT));
 
         // Tooltips are drawn last so they're on top
         maybeDrawTooltip(context, mouseX, mouseY, BodyPart.HEAD, leftPos + 68, topPos + 46, 38, 34);
@@ -112,7 +118,9 @@ public class BodyDamageScreen extends Screen {
         if (icon == null)
             return;
 
-        float ratio = ClientBodyDamageManager.getHealth(part) / part.getMaxHealth();
+        IBodyDamageData data = (IBodyDamageData) this.client.player;
+        float health = data.survivalOverhaul$getBodyDamageManager().getHealth(part);
+        float ratio = health / part.getMaxHealth();
         int conditionRow = LimbCondition.get(ratio).iconIndexY;
 
         boolean hovering = mouseX >= bx && mouseX <= bx + bw && mouseY >= by && mouseY <= by + bh;
@@ -132,7 +140,8 @@ public class BodyDamageScreen extends Screen {
      * Condition Y index maps to: 0=Healthy, 1=Wounded, 2=Heavily Wounded, 3=Dead.
      */
     private void drawHealthBar(DrawContext context, int x, int y, BodyPart part) {
-        float health = ClientBodyDamageManager.getHealth(part);
+        IBodyDamageData data = (IBodyDamageData) this.client.player;
+        float health = data.survivalOverhaul$getBodyDamageManager().getHealth(part);
         float ratio = health / part.getMaxHealth();
 
         // Condition row in the health bar strip
@@ -162,7 +171,8 @@ public class BodyDamageScreen extends Screen {
     private void maybeDrawTooltip(DrawContext context, int mouseX, int mouseY,
             BodyPart part, int x, int y, int w, int h) {
         if (mouseX >= x && mouseX <= x + w && mouseY >= y && mouseY <= y + h) {
-            float health = ClientBodyDamageManager.getHealth(part);
+            IBodyDamageData data = (IBodyDamageData) this.client.player;
+            float health = data.survivalOverhaul$getBodyDamageManager().getHealth(part);
             context.drawTooltip(this.textRenderer,
                     Text.literal(part.getDisplayName() + ": " +
                             String.format("%.1f", health) + " / " +
@@ -175,10 +185,12 @@ public class BodyDamageScreen extends Screen {
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (button == 0 && isBandageMode) {
             BodyPart clicked = getClickedPart((int) mouseX, (int) mouseY);
-            if (clicked != null && ClientBodyDamageManager.getHealth(clicked) < clicked.getMaxHealth()) {
-                ClientBodyDamageManager.setHealth(clicked, clicked.getMaxHealth());
-                sendHealLimbPacket(clicked);
-                this.close(); // 1 heal per bandage, then close and consume
+            if (clicked != null) {
+                IBodyDamageData data = (IBodyDamageData) this.client.player;
+                if (data.survivalOverhaul$getBodyDamageManager().getHealth(clicked) < clicked.getMaxHealth()) {
+                    sendHealLimbPacket(clicked);
+                    this.close(); // 1 heal per bandage, then close and consume
+                }
             }
         }
         return super.mouseClicked(mouseX, mouseY, button);

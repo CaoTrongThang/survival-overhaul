@@ -16,7 +16,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(PlayerEntity.class)
@@ -41,6 +40,18 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IThirstD
     @Override
     public BodyDamageManager survivalOverhaul$getBodyDamageManager() {
         return this.survivalOverhaul$bodyDamageManager;
+    }
+
+    @Inject(method = "initDataTracker", at = @At("TAIL"))
+    protected void survivalOverhaul$initDataTracker(CallbackInfo ci) {
+        this.dataTracker.startTracking(BodyDamageManager.HEAD_HEALTH, 20.0f);
+        this.dataTracker.startTracking(BodyDamageManager.TORSO_HEALTH, 20.0f);
+        this.dataTracker.startTracking(BodyDamageManager.LEFT_ARM_HEALTH, 20.0f);
+        this.dataTracker.startTracking(BodyDamageManager.RIGHT_ARM_HEALTH, 20.0f);
+        this.dataTracker.startTracking(BodyDamageManager.LEFT_LEG_HEALTH, 20.0f);
+        this.dataTracker.startTracking(BodyDamageManager.RIGHT_LEG_HEALTH, 20.0f);
+        this.dataTracker.startTracking(BodyDamageManager.LEFT_FOOT_HEALTH, 10.0f);
+        this.dataTracker.startTracking(BodyDamageManager.RIGHT_FOOT_HEALTH, 10.0f);
     }
 
     @Inject(method = "tick", at = @At("TAIL"))
@@ -68,25 +79,6 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IThirstD
         if (!this.getWorld().isClient() && !source.isOf(DamageTypes.OUT_OF_WORLD)) {
             this.survivalOverhaul$bodyDamageManager.applyDamage(source, amount);
         }
-    }
-
-    /**
-     * Hard Falling: amplify fall damage based on leg wound level.
-     * Vulnerability: amplify non-fall damage based on torso wound level.
-     */
-    @ModifyVariable(method = "applyDamage", at = @At("HEAD"), ordinal = 0, argsOnly = true)
-    protected float survivalOverhaul$amplifyDamage(float amount, DamageSource source) {
-        if (this.getWorld().isClient())
-            return amount;
-
-        if (source.isOf(DamageTypes.FALL)) {
-            float bonus = this.survivalOverhaul$bodyDamageManager.getHardFallingBonus();
-            amount *= (1f + bonus);
-        } else if (!source.isOf(DamageTypes.OUT_OF_WORLD)) {
-            float bonus = this.survivalOverhaul$bodyDamageManager.getVulnerabilityBonus();
-            amount *= (1f + bonus);
-        }
-        return amount;
     }
 
     @Inject(method = "addExhaustion", at = @At("TAIL"))

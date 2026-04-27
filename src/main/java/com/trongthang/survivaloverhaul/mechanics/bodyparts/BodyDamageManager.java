@@ -1,54 +1,66 @@
 package com.trongthang.survivaloverhaul.mechanics.bodyparts;
 
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.nbt.NbtCompound;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.data.DataTracker;
+import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-
-import java.util.HashMap;
-import java.util.Map;
-
+import net.minecraft.entity.player.PlayerEntity;
 import com.trongthang.survivaloverhaul.effect.ModEffects;
-import com.trongthang.survivaloverhaul.networking.ModNetworking;
 
 public class BodyDamageManager {
     private final LivingEntity entity;
-    private final Map<BodyPart, Float> limbHealth = new HashMap<>();
-    private boolean isDirty = false;
+
+    // Tracked Data Keys for synchronization
+    public static final TrackedData<Float> HEAD_HEALTH = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> TORSO_HEALTH = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> LEFT_ARM_HEALTH = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> RIGHT_ARM_HEALTH = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> LEFT_LEG_HEALTH = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> RIGHT_LEG_HEALTH = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> LEFT_FOOT_HEALTH = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> RIGHT_FOOT_HEALTH = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
 
     public BodyDamageManager(LivingEntity entity) {
         this.entity = entity;
-        // Initialize all limbs to max health
-        for (BodyPart part : BodyPart.values()) {
-            limbHealth.put(part, part.getMaxHealth());
-        }
     }
 
     public float getHealth(BodyPart part) {
-        return limbHealth.getOrDefault(part, part.getMaxHealth());
+        return entity.getDataTracker().get(getTrackedDataForPart(part));
     }
 
     public void setHealth(BodyPart part, float health) {
-        float old = getHealth(part);
         float newHealth = Math.max(0, Math.min(health, part.getMaxHealth()));
-        limbHealth.put(part, newHealth);
-        if (old != newHealth) {
-            isDirty = true;
-        }
+        entity.getDataTracker().set(getTrackedDataForPart(part), newHealth);
+    }
+
+    private TrackedData<Float> getTrackedDataForPart(BodyPart part) {
+        return switch (part) {
+            case HEAD -> HEAD_HEALTH;
+            case TORSO -> TORSO_HEALTH;
+            case LEFT_ARM -> LEFT_ARM_HEALTH;
+            case RIGHT_ARM -> RIGHT_ARM_HEALTH;
+            case LEFT_LEG -> LEFT_LEG_HEALTH;
+            case RIGHT_LEG -> RIGHT_LEG_HEALTH;
+            case LEFT_FOOT -> LEFT_FOOT_HEALTH;
+            case RIGHT_FOOT -> RIGHT_FOOT_HEALTH;
+        };
     }
 
     public void update() {
         if (!entity.getWorld().isClient) {
             applyLimbEffects();
-
-            if (isDirty && entity instanceof ServerPlayerEntity serverPlayer) {
-                ModNetworking.sendBodyDamageSync(serverPlayer,
-                        (IBodyDamageData) entity);
-                isDirty = false;
-            }
         }
     }
 
@@ -120,40 +132,6 @@ public class BodyDamageManager {
         }
     }
 
-    /**
-     * Returns the amplification level for Hard Falling (fall damage multiplier).
-     */
-    public float getHardFallingBonus() {
-        float leftL = getHealth(BodyPart.LEFT_LEG) / BodyPart.LEFT_LEG.getMaxHealth();
-        float rightL = getHealth(BodyPart.RIGHT_LEG) / BodyPart.RIGHT_LEG.getMaxHealth();
-        float leftF = getHealth(BodyPart.LEFT_FOOT) / BodyPart.LEFT_FOOT.getMaxHealth();
-        float rightF = getHealth(BodyPart.RIGHT_FOOT) / BodyPart.RIGHT_FOOT.getMaxHealth();
-        float minRatio = Math.min(Math.min(leftL, rightL), Math.min(leftF, rightF));
-
-        if (minRatio > 0.66f)
-            return 0f;
-        if (minRatio > 0.33f)
-            return 0.2f; // 20% extra fall damage
-        if (minRatio > 0f)
-            return 0.4f; // 40% extra fall damage
-        return 0.6f; // 60% extra fall damage (broken legs/feet)
-    }
-
-    /**
-     * Returns the amplification ratio for Vulnerability (non-fall damage
-     * multiplier).
-     */
-    public float getVulnerabilityBonus() {
-        float ratio = getHealth(BodyPart.TORSO) / BodyPart.TORSO.getMaxHealth();
-        if (ratio > 0.66f)
-            return 0f;
-        if (ratio > 0.33f)
-            return 0.2f; // 20% extra damage
-        if (ratio > 0f)
-            return 0.4f; // 40% extra damage
-        return 0.6f; // 60% extra damage (broken torso)
-    }
-
     public void heal(BodyPart part, float amount) {
         setHealth(part, getHealth(part) + amount);
     }
@@ -203,17 +181,17 @@ public class BodyDamageManager {
         setHealth(part, getHealth(part) - amount);
     }
 
-    public void writeNbt(NbtCompound nbt) {
-        NbtCompound partsNbt = new NbtCompound();
-        for (Map.Entry<BodyPart, Float> entry : limbHealth.entrySet()) {
-            partsNbt.putFloat(entry.getKey().name(), entry.getValue());
+    public void writeNbt(net.minecraft.nbt.NbtCompound nbt) {
+        net.minecraft.nbt.NbtCompound partsNbt = new net.minecraft.nbt.NbtCompound();
+        for (BodyPart part : BodyPart.values()) {
+            partsNbt.putFloat(part.name(), getHealth(part));
         }
         nbt.put("BodyParts", partsNbt);
     }
 
-    public void readNbt(NbtCompound nbt) {
+    public void readNbt(net.minecraft.nbt.NbtCompound nbt) {
         if (nbt.contains("BodyParts")) {
-            NbtCompound partsNbt = nbt.getCompound("BodyParts");
+            net.minecraft.nbt.NbtCompound partsNbt = nbt.getCompound("BodyParts");
             for (BodyPart part : BodyPart.values()) {
                 if (partsNbt.contains(part.name())) {
                     setHealth(part, partsNbt.getFloat(part.name()));

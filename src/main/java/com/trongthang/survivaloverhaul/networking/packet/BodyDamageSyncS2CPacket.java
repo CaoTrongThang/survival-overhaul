@@ -16,7 +16,10 @@ public class BodyDamageSyncS2CPacket {
 
         Map<BodyPart, Float> receivedHealthList = new HashMap<>();
         for (BodyPart part : BodyPart.values()) {
-            receivedHealthList.put(part, buf.readFloat());
+            float health = buf.readFloat();
+            receivedHealthList.put(part, health);
+            // System.out.println("[SurvivalOverhaul] Synced part " + part.name() + ": " +
+            // health);
         }
 
         client.execute(() -> {

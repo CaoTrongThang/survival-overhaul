@@ -1,6 +1,5 @@
 package com.trongthang.survivaloverhaul.networking;
 
-import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
 import com.trongthang.survivaloverhaul.mechanics.thirst.ThirstInteractionHandler;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
@@ -20,17 +19,9 @@ public class ModNetworking {
     }
 
     public static void sync(ServerPlayerEntity player,
-            IThirstData data) {
+            com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData data) {
         sendThirstSync(player, data.survivalOverhaul$getThirstManager().getThirstLevel(),
                 data.survivalOverhaul$getThirstManager().getThirstSaturationLevel());
-    }
-
-    public static void sendBodyDamageSync(ServerPlayerEntity player, IBodyDamageData data) {
-        PacketByteBuf buf = PacketByteBufs.create();
-        for (BodyPart part : BodyPart.values()) {
-            buf.writeFloat(data.survivalOverhaul$getBodyDamageManager().getHealth(part));
-        }
-        ServerPlayNetworking.send(player, NetworkingConstants.BODY_DAMAGE_SYNC_ID, buf);
     }
 
     public static void registerServerReceivers() {
