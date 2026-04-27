@@ -7,6 +7,8 @@ import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyDamageManager;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.world.World;
@@ -14,6 +16,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(PlayerEntity.class)
@@ -61,11 +64,29 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IThirstD
     }
 
     @Inject(method = "applyDamage", at = @At("HEAD"))
-    protected void survivalOverhaul$applyBodyDamage(net.minecraft.entity.damage.DamageSource source, float amount,
-            CallbackInfo ci) {
-        if (!this.getWorld().isClient() && !source.isOf(net.minecraft.entity.damage.DamageTypes.OUT_OF_WORLD)) {
+    protected void survivalOverhaul$applyBodyDamage(DamageSource source, float amount, CallbackInfo ci) {
+        if (!this.getWorld().isClient() && !source.isOf(DamageTypes.OUT_OF_WORLD)) {
             this.survivalOverhaul$bodyDamageManager.applyDamage(source, amount);
         }
+    }
+
+    /**
+     * Hard Falling: amplify fall damage based on leg wound level.
+     * Vulnerability: amplify non-fall damage based on torso wound level.
+     */
+    @ModifyVariable(method = "applyDamage", at = @At("HEAD"), ordinal = 0, argsOnly = true)
+    protected float survivalOverhaul$amplifyDamage(float amount, DamageSource source) {
+        if (this.getWorld().isClient())
+            return amount;
+
+        if (source.isOf(DamageTypes.FALL)) {
+            float bonus = this.survivalOverhaul$bodyDamageManager.getHardFallingBonus();
+            amount *= (1f + bonus);
+        } else if (!source.isOf(DamageTypes.OUT_OF_WORLD)) {
+            float bonus = this.survivalOverhaul$bodyDamageManager.getVulnerabilityBonus();
+            amount *= (1f + bonus);
+        }
+        return amount;
     }
 
     @Inject(method = "addExhaustion", at = @At("TAIL"))

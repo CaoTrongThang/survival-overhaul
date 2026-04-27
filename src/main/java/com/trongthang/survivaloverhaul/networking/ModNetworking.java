@@ -1,6 +1,7 @@
 package com.trongthang.survivaloverhaul.networking;
 
 import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
+import com.trongthang.survivaloverhaul.mechanics.thirst.ThirstInteractionHandler;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
 import com.trongthang.survivaloverhaul.SurvivalOverhaul;
@@ -33,6 +34,13 @@ public class ModNetworking {
     }
 
     public static void registerServerReceivers() {
+        ServerPlayNetworking.registerGlobalReceiver(NetworkingConstants.DRINKING_REQUEST_ID,
+                (server, player, handler, buf, responseSender) -> {
+                    server.execute(() -> {
+                        ThirstInteractionHandler.requestDrink(player);
+                    });
+                });
+
         ServerPlayNetworking.registerGlobalReceiver(NetworkingConstants.HEAL_LIMB_C2S_ID,
                 (server, player, handler, buf, responseSender) -> {
                     String partName = buf.readString();
@@ -40,10 +48,16 @@ public class ModNetworking {
                         try {
                             BodyPart part = BodyPart.valueOf(partName);
                             if (player instanceof IBodyDamageData data) {
-                                data.survivalOverhaul$getBodyDamageManager().heal(part, part.getMaxHealth()); // Fully
-                                                                                                              // heal
-                                                                                                              // the
-                                                                                                              // limb
+                                data.survivalOverhaul$getBodyDamageManager().heal(part, part.getMaxHealth());
+                                // Consume 1 of the held item (the bandage)
+                                net.minecraft.item.ItemStack held = player.getMainHandStack();
+                                if (!held.isEmpty()) {
+                                    held.decrement(1);
+                                } else {
+                                    held = player.getOffHandStack();
+                                    if (!held.isEmpty())
+                                        held.decrement(1);
+                                }
                             }
                         } catch (IllegalArgumentException e) {
                             SurvivalOverhaul.LOGGER.error("Invalid BodyPart received: {}", partName);

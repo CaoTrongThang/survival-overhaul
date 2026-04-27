@@ -9,6 +9,7 @@
 	],
 	"client": [
 		"client.InGameHudMixin",
+		"client.MinecraftClientMixin",
 		"client.ClientPlayerEntityMixin"
 	],
 	"injectors": {

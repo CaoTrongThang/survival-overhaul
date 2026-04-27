@@ -41,6 +41,10 @@ public class ThirstInteractionHandler {
         return TypedActionResult.pass(player.getStackInHand(hand));
     }
 
+    public static void requestDrink(ServerPlayerEntity player) {
+        tryDrink(player, player.getWorld(), Hand.MAIN_HAND);
+    }
+
     private static ActionResult tryDrink(PlayerEntity player, World world, Hand hand) {
         if (!ModConfig.enableThirst) {
             return ActionResult.PASS;
@@ -55,9 +59,14 @@ public class ThirstInteractionHandler {
         boolean drinkingWater = false;
         boolean isPurified = false;
 
+        // 1. Check Rain
         if (ModConfig.enableRainDrinking && world.hasRain(player.getBlockPos().up())) {
             drinkingRain = true;
-        } else if (ModConfig.enableHandDrinking) {
+        }
+
+        // 2. Check Fluid Raycast (if not already drinking rain or specifically looking
+        // at ground)
+        if (!drinkingRain && ModConfig.enableHandDrinking) {
             HitResult hit = player.raycast(5.0, 0.0f, true);
             if (hit.getType() == HitResult.Type.BLOCK) {
                 BlockPos pos = ((BlockHitResult) hit).getBlockPos();

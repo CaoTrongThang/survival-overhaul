@@ -10,7 +10,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 public class BodyDamageHud {
     private static final Identifier ICONS = new Identifier("survivaloverhaul", "textures/gui/overlay.png");
     private static final int TEX_WIDTH = 16;
-    private static final int TEX_HEIGHT = 32;
 
     public static void render(DrawContext context, MinecraftClient client, int scaledWidth, int scaledHeight) {
         if (client.player == null || client.options.hudHidden)
@@ -29,6 +28,8 @@ public class BodyDamageHud {
         drawLimb(context, xBase, yBase, BodyPart.RIGHT_ARM);
         drawLimb(context, xBase, yBase, BodyPart.LEFT_LEG);
         drawLimb(context, xBase, yBase, BodyPart.RIGHT_LEG);
+        drawLimb(context, xBase, yBase, BodyPart.LEFT_FOOT);
+        drawLimb(context, xBase, yBase, BodyPart.RIGHT_FOOT);
 
         RenderSystem.disableBlend();
     }
@@ -90,14 +91,28 @@ public class BodyDamageHud {
             texX = 4;
             texY = 156;
             width = 4;
-            height = 12;
+            height = 8;
         } else if (part == BodyPart.RIGHT_LEG) {
             x += 8;
             y += 20;
             texX = 8;
             texY = 156;
             width = 4;
-            height = 12;
+            height = 8;
+        } else if (part == BodyPart.LEFT_FOOT) {
+            x += 4;
+            y += 28;
+            texX = 4;
+            texY = 164;
+            width = 4;
+            height = 4;
+        } else if (part == BodyPart.RIGHT_FOOT) {
+            x += 8;
+            y += 28;
+            texX = 8;
+            texY = 164;
+            width = 4;
+            height = 4;
         }
 
         context.drawTexture(ICONS, x, y, offsetX + texX, texY, width, height);

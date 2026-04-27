@@ -6,7 +6,9 @@ public enum BodyPart {
     LEFT_ARM("Left Arm", 20f),
     RIGHT_ARM("Right Arm", 20f),
     LEFT_LEG("Left Leg", 20f),
-    RIGHT_LEG("Right Leg", 20f);
+    RIGHT_LEG("Right Leg", 20f),
+    LEFT_FOOT("Left Foot", 10f),
+    RIGHT_FOOT("Right Foot", 10f);
 
     private final String displayName;
     private final float maxHealth;

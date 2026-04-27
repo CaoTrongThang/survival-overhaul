@@ -1,6 +1,14 @@
 {
     "item.survivaloverhaul.purified_water": "Purified Water Bottle",
     "item.survivaloverhaul.purified_water_bucket": "Purified Water Bucket",
+    "item.survivaloverhaul.bandage": "Bandage",
+    "item.survivaloverhaul.medkit": "Medkit",
     "effect.survivaloverhaul.thirst": "Thirst",
-    "category.survivaloverhaul.thirst": "Thirst"
+    "effect.survivaloverhaul.headache": "Headache",
+    "effect.survivaloverhaul.hard_falling": "Hard Falling",
+    "effect.survivaloverhaul.vulnerability": "Vulnerability",
+    "category.survivaloverhaul.thirst": "Thirst",
+    "key.survivaloverhaul.open_body_damage_screen": "Open Body Status",
+    "category.survivaloverhaul.keys": "Survival Overhaul",
+    "screen.survivaloverhaul.body_damage": "Body Status"
 }
