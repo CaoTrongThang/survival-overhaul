@@ -1,5 +1,6 @@
 package com.trongthang.survivaloverhaul.mechanics.bodyparts;
 
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.data.TrackedData;
@@ -9,7 +10,12 @@ import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.item.ItemStack;
 import com.trongthang.survivaloverhaul.effect.ModEffects;
+import com.trongthang.survivaloverhaul.config.ModConfig;
+import com.trongthang.survivaloverhaul.mechanics.temperature.ITemperatureData;
+import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
 
 public class BodyDamageManager {
     private final LivingEntity entity;
@@ -130,6 +136,45 @@ public class BodyDamageManager {
             entity.addStatusEffect(new StatusEffectInstance(
                     ModEffects.VULNERABILITY, 40, amplifier, false, true, true));
         }
+
+        // ----- HEALTHY BODY: +1 Strength if >= 90% total health -----
+        if (ModConfig.enableHealthyBonus) {
+            float totalHealth = 0;
+            float maxTotalHealth = 0;
+            for (BodyPart part : BodyPart.values()) {
+                totalHealth += getHealth(part);
+                maxTotalHealth += part.getMaxHealth();
+            }
+
+            boolean isHealthy = (totalHealth / maxTotalHealth >= ModConfig.healthyBonusThreshold);
+            boolean canApplyFeelingGood = true;
+
+            if (entity instanceof PlayerEntity player) {
+                float temp = ((ITemperatureData) player).survivalOverhaul$getTemperatureManager().getTemperature();
+                int thirst = ((IThirstData) player).survivalOverhaul$getThirstManager().getThirstLevel();
+
+                // If player is too cold (< 15.0), too hot (> 25.0), or thirsty (< 10)
+                if (temp < 15.0f || temp > 25.0f || thirst < 10) {
+                    canApplyFeelingGood = false;
+                }
+            }
+
+            if (isHealthy && canApplyFeelingGood) {
+                int baseAmplifier = 0;
+                StatusEffectInstance currentEffect = entity.getStatusEffect(ModEffects.FEELING_GOOD);
+                if (currentEffect != null) {
+                    // If the existing effect is not our short-duration bonus, use its amplifier
+                    if (currentEffect.getDuration() > 45) {
+                        baseAmplifier = currentEffect.getAmplifier() + 1;
+                    } else {
+                        // It's likely our own bonus, keep the base logic or just refresh
+                        baseAmplifier = currentEffect.getAmplifier();
+                    }
+                }
+                entity.addStatusEffect(new StatusEffectInstance(
+                        ModEffects.FEELING_GOOD, 200, baseAmplifier, false, false, true));
+            }
+        }
     }
 
     public void heal(BodyPart part, float amount) {
@@ -143,10 +188,10 @@ public class BodyDamageManager {
     }
 
     public void applyDamage(DamageSource source, float amount) {
-        if (amount <= 0)
+        if (!ModConfig.enableBodyDamage || amount <= 0)
             return;
 
-        float limbDamage = amount * 0.5f; // Limb takes 50% of the actual damage to scale it
+        float limbDamage = amount * ModConfig.limbDamageMultiplier;
 
         if (source.isOf(DamageTypes.FALL) || source.isOf(DamageTypes.HOT_FLOOR)
                 || source.isOf(DamageTypes.SWEET_BERRY_BUSH)) {
@@ -178,7 +223,38 @@ public class BodyDamageManager {
     }
 
     public void damage(BodyPart part, float amount) {
+        if (amount <= 0)
+            return;
+
+        // Apply armor reduction for this specific limb
+        amount *= (1.0f - getLimbArmorReduction(part));
+
         setHealth(part, getHealth(part) - amount);
+    }
+
+    private float getLimbArmorReduction(BodyPart part) {
+        EquipmentSlot slot = switch (part) {
+            case HEAD -> EquipmentSlot.HEAD;
+            case TORSO, LEFT_ARM, RIGHT_ARM -> EquipmentSlot.CHEST;
+            case LEFT_LEG, RIGHT_LEG -> EquipmentSlot.LEGS;
+            case LEFT_FOOT, RIGHT_FOOT -> EquipmentSlot.FEET;
+        };
+
+        ItemStack armorStack = entity.getEquippedStack(slot);
+        if (armorStack.isEmpty() || !(armorStack.getItem() instanceof ArmorItem armorItem)) {
+            return 0f;
+        }
+
+        // Linear reduction: each armor point reduces limb damage by 4% (max 80% per
+        // piece)
+        float protection = armorItem.getProtection();
+
+        // Chestplate only offers partial protection to arms
+        if (part == BodyPart.LEFT_ARM || part == BodyPart.RIGHT_ARM) {
+            protection *= 0.5f;
+        }
+
+        return Math.min(0.8f, protection * 0.04f);
     }
 
     public void writeNbt(net.minecraft.nbt.NbtCompound nbt) {

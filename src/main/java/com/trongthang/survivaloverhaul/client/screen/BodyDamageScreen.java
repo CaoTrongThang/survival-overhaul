@@ -6,6 +6,7 @@ import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import com.trongthang.survivaloverhaul.networking.NetworkingConstants;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import com.trongthang.survivaloverhaul.config.ModConfig;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.network.PacketByteBuf;
@@ -48,6 +49,10 @@ public class BodyDamageScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        if (!ModConfig.enableBodyDamage) {
+            this.close();
+            return;
+        }
         leftPos = (this.width - BG_WIDTH) / 2;
         topPos = (this.height - BG_HEIGHT) / 2;
     }

@@ -8,9 +8,19 @@ public class ModConfig extends MidnightConfig {
     @Entry(category = "thirst", name = "Enable Thirst")
     public static boolean enableThirst = true;
 
+    // --- Temperature ---
+    @Entry(category = "temperature", name = "Enable Temperature")
+    public static boolean enableTemperature = true;
+
+    @Entry(category = "temperature", name = "Temperature Change Speed", isSlider = true, min = 0.01f, max = 1.0f)
+    public static float temperatureChangeSpeed = 0.1f;
+
+    @Entry(category = "temperature", name = "Temperature Detection Range", min = 1, max = 8)
+    public static int temperatureDetectionRange = 3;
+
     // --- Thirst Depletion ---
     @Entry(category = "thirst", name = "Thirst Depletion Multiplier", isSlider = true, min = 0.0f, max = 10.0f)
-    public static float thirstDepletionMultiplier = 3.0f;
+    public static float thirstDepletionMultiplier = 2.0f;
 
     @Entry(category = "thirst", name = "Thirst Exhaustion Threshold", isSlider = true, min = 0.1f, max = 10.0f)
     public static float thirstExhaustionThreshold = 4.0f;
@@ -71,4 +81,33 @@ public class ModConfig extends MidnightConfig {
 
     @Entry(category = "thirst", name = "Thirst Interval (Thirst check interval)", min = 20, max = 200)
     public static int thirstInterval = 80;
+
+    // --- Body Parts ---
+    @Entry(category = "bodyparts", name = "Enable Body Damage")
+    public static boolean enableBodyDamage = true;
+
+    @Entry(category = "bodyparts", name = "Limb Damage Multiplier", isSlider = true, min = 0.0f, max = 2.0f)
+    public static float limbDamageMultiplier = 0.5f;
+
+    @Entry(category = "bodyparts", name = "Enable Healthy Bonus")
+    public static boolean enableHealthyBonus = true;
+
+    @Entry(category = "bodyparts", name = "Healthy Bonus Threshold (0.95 = 95% health then give the buff)", isSlider = true, min = 0.5f, max = 1.0f)
+    public static float healthyBonusThreshold = 0.95f;
+
+    public enum HudPosition {
+        BOTTOM_RIGHT, BOTTOM_LEFT, TOP_RIGHT, TOP_LEFT, MIDDLE_RIGHT, MIDDLE_LEFT, TOP_MIDDLE
+    }
+
+    @Entry(category = "bodyparts", name = "HUD Position")
+    public static HudPosition hudPosition = HudPosition.MIDDLE_LEFT;
+
+    @Entry(category = "bodyparts", name = "HUD Scale", isSlider = true, min = 0.5f, max = 3.0f)
+    public static float hudScale = 2.0f;
+
+    @Entry(category = "bodyparts", name = "HUD X Offset", isSlider = true, min = -500, max = 500)
+    public static int hudXOffset = 0;
+
+    @Entry(category = "bodyparts", name = "HUD Y Offset", isSlider = true, min = -500, max = 500)
+    public static int hudYOffset = 0;
 }

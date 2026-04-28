@@ -14,13 +14,13 @@ public class ModItemGroup {
     public static final ItemGroup SURVIVAL_OVERHAUL_GROUP = Registry.register(Registries.ITEM_GROUP,
             new Identifier(SurvivalOverhaul.MOD_ID, "survival_overhaul"),
             FabricItemGroup.builder().displayName(Text.translatable("itemgroup.survival_overhaul"))
-                    .icon(() -> new ItemStack(ModItems.TEST_ITEM)).entries((displayContext, entries) -> {
-                        entries.add(ModItems.TEST_ITEM);
-                        entries.add(ModBlocks.TEST_BLOCK);
+                    .icon(() -> new ItemStack(ModItems.PURIFIED_WATER)).entries((displayContext, entries) -> {
                         entries.add(ModItems.PURIFIED_WATER);
                         entries.add(ModItems.PURIFIED_WATER_BUCKET);
                         entries.add(ModItems.MEDKIT);
                         entries.add(ModItems.BANDAGE);
+                        entries.add(ModBlocks.BOILER);
+                        entries.add(ModBlocks.ICE_BOX);
                     }).build());
 
     public static void registerItemGroups() {

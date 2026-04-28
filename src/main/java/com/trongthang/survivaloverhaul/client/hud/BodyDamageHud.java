@@ -2,6 +2,7 @@ package com.trongthang.survivaloverhaul.client.hud;
 
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
+import com.trongthang.survivaloverhaul.config.ModConfig;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.Identifier;
@@ -12,26 +13,62 @@ public class BodyDamageHud {
     private static final int TEX_WIDTH = 16;
 
     public static void render(DrawContext context, MinecraftClient client, int scaledWidth, int scaledHeight) {
-        if (client.player == null || client.options.hudHidden)
+        if (!ModConfig.enableBodyDamage || client.player == null || client.options.hudHidden)
             return;
 
-        // Match LSO general placement above hunger bar (right side)
-        int xBase = scaledWidth / 2 + 92;
-        int yBase = scaledHeight - 33;
+        // Calculate position based on config
+        int xBase = 0;
+        int yBase = 0;
+
+        switch (ModConfig.hudPosition) {
+            case BOTTOM_RIGHT -> {
+                xBase = scaledWidth / 2 + 92;
+                yBase = scaledHeight - 36;
+            }
+            case BOTTOM_LEFT -> {
+                xBase = scaledWidth / 2 - 116;
+                yBase = scaledHeight - 36;
+            }
+            case TOP_RIGHT -> {
+                xBase = scaledWidth - 34;
+                yBase = 10;
+            }
+            case TOP_LEFT -> {
+                xBase = 10;
+                yBase = 10;
+            }
+            case MIDDLE_RIGHT -> {
+                xBase = scaledWidth - 34;
+                yBase = scaledHeight / 2 - 18;
+            }
+            case MIDDLE_LEFT -> {
+                xBase = 10;
+                yBase = scaledHeight / 2 - 18;
+            }
+            case TOP_MIDDLE -> {
+                xBase = scaledWidth / 2 - 12;
+                yBase = 10;
+            }
+        }
+
+        context.getMatrices().push();
+        context.getMatrices().translate(xBase + ModConfig.hudXOffset, yBase + ModConfig.hudYOffset, 0);
+        context.getMatrices().scale(ModConfig.hudScale, ModConfig.hudScale, 1.0f);
 
         RenderSystem.enableBlend();
 
-        // Draw each limb
-        drawLimb(context, xBase, yBase, BodyPart.HEAD);
-        drawLimb(context, xBase, yBase, BodyPart.TORSO);
-        drawLimb(context, xBase, yBase, BodyPart.LEFT_ARM);
-        drawLimb(context, xBase, yBase, BodyPart.RIGHT_ARM);
-        drawLimb(context, xBase, yBase, BodyPart.LEFT_LEG);
-        drawLimb(context, xBase, yBase, BodyPart.RIGHT_LEG);
-        drawLimb(context, xBase, yBase, BodyPart.LEFT_FOOT);
-        drawLimb(context, xBase, yBase, BodyPart.RIGHT_FOOT);
+        // Draw each limb relative to (0,0) due to translation
+        drawLimb(context, 0, 0, BodyPart.HEAD);
+        drawLimb(context, 0, 0, BodyPart.TORSO);
+        drawLimb(context, 0, 0, BodyPart.LEFT_ARM);
+        drawLimb(context, 0, 0, BodyPart.RIGHT_ARM);
+        drawLimb(context, 0, 0, BodyPart.LEFT_LEG);
+        drawLimb(context, 0, 0, BodyPart.RIGHT_LEG);
+        drawLimb(context, 0, 0, BodyPart.LEFT_FOOT);
+        drawLimb(context, 0, 0, BodyPart.RIGHT_FOOT);
 
         RenderSystem.disableBlend();
+        context.getMatrices().pop();
     }
 
     private static void drawLimb(DrawContext context, int xBase, int yBase, BodyPart part) {

@@ -1,6 +1,7 @@
 package com.trongthang.survivaloverhaul.client;
 
 import com.trongthang.survivaloverhaul.client.screen.BodyDamageScreen;
+import com.trongthang.survivaloverhaul.config.ModConfig;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.option.KeyBinding;
@@ -20,7 +21,7 @@ public class Keybindings {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openBodyDamageScreenKey.wasPressed()) {
-                if (client.player != null && client.currentScreen == null) {
+                if (ModConfig.enableBodyDamage && client.player != null && client.currentScreen == null) {
                     client.setScreen(new BodyDamageScreen(false));
                 }
             }

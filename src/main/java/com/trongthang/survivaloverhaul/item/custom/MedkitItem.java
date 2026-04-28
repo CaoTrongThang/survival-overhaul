@@ -1,5 +1,6 @@
 package com.trongthang.survivaloverhaul.item.custom;
 
+import com.trongthang.survivaloverhaul.config.ModConfig;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -19,13 +20,13 @@ public class MedkitItem extends Item {
     public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
         ItemStack stack = user.getStackInHand(hand);
 
-        if (!world.isClient) {
+        if (!world.isClient && ModConfig.enableBodyDamage) {
             if (user instanceof IBodyDamageData dataData) {
                 dataData.survivalOverhaul$getBodyDamageManager().healAll();
 
                 // Play sound
-                world.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_PLAYER_HURT_SWEET_BERRY_BUSH,
-                        SoundCategory.PLAYERS, 1.0F, 1.0F); // Placeholder sound for healing
+                world.playSound(null, user.getBlockPos(), SoundEvents.ENTITY_EXPERIENCE_ORB_PICKUP,
+                        SoundCategory.PLAYERS, 1.0F, 1.0F);
 
                 // Consume item
                 if (!user.getAbilities().creativeMode) {

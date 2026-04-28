@@ -26,6 +26,8 @@ public class SurvivalOverhaul implements ModInitializer {
 		ModItemGroup.registerItemGroups();
 		ModItems.registerModItems();
 		ModBlocks.registerModBlocks();
+		com.trongthang.survivaloverhaul.block.entity.ModBlockEntities.registerBlockEntities();
+		com.trongthang.survivaloverhaul.screen.ModScreenHandlers.registerScreenHandlers();
 		com.trongthang.survivaloverhaul.init.FluidInit.init();
 		ModEffects.registerEffects();
 		ThirstInteractionHandler.register();

@@ -7,8 +7,12 @@
     "effect.survivaloverhaul.headache": "Headache",
     "effect.survivaloverhaul.hard_falling": "Hard Falling",
     "effect.survivaloverhaul.vulnerability": "Vulnerability",
+    "effect.survivaloverhaul.feeling_good": "I'm Feeling Good",
     "category.survivaloverhaul.thirst": "Thirst",
     "key.survivaloverhaul.open_body_damage_screen": "Open Body Status",
     "category.survivaloverhaul.keys": "Survival Overhaul",
-    "screen.survivaloverhaul.body_damage": "Body Status"
+    "screen.survivaloverhaul.body_damage": "Body Status",
+    "block.survivaloverhaul.boiler": "Boiler",
+    "block.survivaloverhaul.ice_box": "Ice Box",
+    "itemgroup.survival_overhaul": "Survival Overhaul"
 }

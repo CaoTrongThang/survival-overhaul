@@ -13,6 +13,7 @@ base {
 repositories {
 	maven { url "https://maven.midnightdust.eu/releases" }
 	maven { url "https://maven.terraformersmc.com/" }
+	maven { url "https://maven.llamalad7.dev/releases" }
 }
 
 fabricApi {
@@ -29,6 +30,9 @@ dependencies {
 
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	modImplementation include("eu.midnightdust:midnightlib:1.9.2+1.20.1-fabric")
+
+	implementation "io.github.llamalad7:mixinextras-fabric:0.5.4"
+	annotationProcessor "io.github.llamalad7:mixinextras-fabric:0.5.4"
 }
 
 processResources {

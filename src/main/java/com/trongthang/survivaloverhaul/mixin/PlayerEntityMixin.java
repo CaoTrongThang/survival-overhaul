@@ -18,8 +18,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import com.trongthang.survivaloverhaul.mechanics.temperature.ITemperatureData;
+import com.trongthang.survivaloverhaul.mechanics.temperature.TemperatureManager;
+
 @Mixin(PlayerEntity.class)
-public abstract class PlayerEntityMixin extends LivingEntity implements IThirstData, IBodyDamageData {
+public abstract class PlayerEntityMixin extends LivingEntity implements IThirstData, IBodyDamageData, ITemperatureData {
 
     @Unique
     private final ThirstManager survivalOverhaul$thirstManager = new ThirstManager();
@@ -27,6 +30,10 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IThirstD
     @Unique
     private final BodyDamageManager survivalOverhaul$bodyDamageManager = new BodyDamageManager(
             (PlayerEntity) (Object) this);
+
+    @Unique
+    private final TemperatureManager survivalOverhaul$temperatureManager = new TemperatureManager(
+            (LivingEntity) (Object) this);
 
     protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
         super(entityType, world);
@@ -42,6 +49,11 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IThirstD
         return this.survivalOverhaul$bodyDamageManager;
     }
 
+    @Override
+    public TemperatureManager survivalOverhaul$getTemperatureManager() {
+        return this.survivalOverhaul$temperatureManager;
+    }
+
     @Inject(method = "initDataTracker", at = @At("TAIL"))
     protected void survivalOverhaul$initDataTracker(CallbackInfo ci) {
         this.dataTracker.startTracking(BodyDamageManager.HEAD_HEALTH, 20.0f);
@@ -52,13 +64,20 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IThirstD
         this.dataTracker.startTracking(BodyDamageManager.RIGHT_LEG_HEALTH, 20.0f);
         this.dataTracker.startTracking(BodyDamageManager.LEFT_FOOT_HEALTH, 10.0f);
         this.dataTracker.startTracking(BodyDamageManager.RIGHT_FOOT_HEALTH, 10.0f);
+        this.dataTracker.startTracking(TemperatureManager.TEMPERATURE, 20.0f);
+        this.dataTracker.startTracking(TemperatureManager.TARGET_TEMPERATURE, 20.0f);
     }
 
     @Inject(method = "tick", at = @At("TAIL"))
-    private void survivalOverhaul$tickThirst(CallbackInfo ci) {
+    private void survivalOverhaul$tick(CallbackInfo ci) {
         if (!this.getWorld().isClient) {
             this.survivalOverhaul$thirstManager.update((PlayerEntity) (Object) this);
-            this.survivalOverhaul$bodyDamageManager.update();
+            if (ModConfig.enableBodyDamage) {
+                this.survivalOverhaul$bodyDamageManager.update();
+            }
+            if (ModConfig.enableTemperature) {
+                this.survivalOverhaul$temperatureManager.update();
+            }
         }
     }
 
@@ -66,17 +85,19 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IThirstD
     private void survivalOverhaul$readCustomDataFromNbt(NbtCompound nbt, CallbackInfo ci) {
         this.survivalOverhaul$thirstManager.readNbt(nbt);
         this.survivalOverhaul$bodyDamageManager.readNbt(nbt);
+        this.survivalOverhaul$temperatureManager.readNbt(nbt);
     }
 
     @Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
     private void survivalOverhaul$writeCustomDataToNbt(NbtCompound nbt, CallbackInfo ci) {
         this.survivalOverhaul$thirstManager.writeNbt(nbt);
         this.survivalOverhaul$bodyDamageManager.writeNbt(nbt);
+        this.survivalOverhaul$temperatureManager.writeNbt(nbt);
     }
 
     @Inject(method = "applyDamage", at = @At("HEAD"))
     protected void survivalOverhaul$applyBodyDamage(DamageSource source, float amount, CallbackInfo ci) {
-        if (!this.getWorld().isClient() && !source.isOf(DamageTypes.OUT_OF_WORLD)) {
+        if (!this.getWorld().isClient() && ModConfig.enableBodyDamage && !source.isOf(DamageTypes.OUT_OF_WORLD)) {
             this.survivalOverhaul$bodyDamageManager.applyDamage(source, amount);
         }
     }
