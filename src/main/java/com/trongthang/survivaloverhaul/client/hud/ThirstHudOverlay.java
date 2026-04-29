@@ -33,11 +33,7 @@ public class ThirstHudOverlay {
 
             random.setSeed((long) (player.age * 312284));
 
-            float temperature = 20.0f;
-            if (player instanceof ITemperatureData tempData) {
-                temperature = tempData.survivalOverhaul$getTemperatureManager().getBodyTemperature();
-            }
-            boolean isHot = temperature > 25.0f;
+            boolean isHot = ((ITemperatureData) player).survivalOverhaul$getTemperatureManager().isHot();
             int textureY = isHot ? 9 : 0; // Row 2 (y=9) is for "hot" thirst variants
 
             // Render 10 icons

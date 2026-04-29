@@ -164,11 +164,11 @@ public class BodyDamageManager {
             }
 
             if (entity instanceof PlayerEntity player) {
-                float temp = ((ITemperatureData) player).survivalOverhaul$getTemperatureManager().getBodyTemperature();
                 int thirst = ((IThirstData) player).survivalOverhaul$getThirstManager().getThirstLevel();
 
-                // If player is too cold (< 15.0), too hot (> 25.0), or thirsty (< 10)
-                if (temp < 15.0f || temp > 25.0f || thirst < 10) {
+                // If player is too cold, too hot, or thirsty (< 10)
+                var tempManager = ((ITemperatureData) player).survivalOverhaul$getTemperatureManager();
+                if (tempManager.isCold() || tempManager.isHot() || thirst < 10) {
                     canApplyFeelingGood = false;
                 }
             }
