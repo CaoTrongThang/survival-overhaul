@@ -4,7 +4,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.inventory.Inventories;
 import net.minecraft.inventory.SidedInventory;
 import net.minecraft.item.ItemStack;
@@ -161,19 +160,27 @@ public abstract class AbstractThermalBlockEntity extends BlockEntity
             return;
 
         boolean isPowered = world.isReceivingRedstonePower(pos);
+
+        // If it's a boiler (2-tall), check the upper block for power too
+        if (!isPowered && state.contains(Properties.DOUBLE_BLOCK_HALF)
+                && state.get(Properties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
+            isPowered = world.isReceivingRedstonePower(pos.up());
+        }
         boolean wasLit = entity.isLit();
         boolean isLit = wasLit;
+        boolean changed = false;
 
         if (isLit && isPowered) {
             entity.fuelTime--;
+            changed = true;
             if (entity.fuelTime <= 0) {
                 isLit = false;
             }
         }
 
         if (!isLit && isPowered) {
-            for (int i = 0; i < entity.size(); i++) {
-                ItemStack stack = entity.getStack(i);
+            for (int i = 0; i < entity.inventory.size(); i++) {
+                ItemStack stack = entity.inventory.get(i);
                 if (!stack.isEmpty() && entity.isItemValid(stack)) {
                     int duration = entity.getFuelDuration(stack);
                     if (duration > 0) {
@@ -181,26 +188,29 @@ public abstract class AbstractThermalBlockEntity extends BlockEntity
                         entity.fuelDuration = duration;
                         stack.decrement(1);
                         isLit = true;
+                        changed = true;
                         break;
                     }
                 }
             }
         }
 
-        if (wasLit != isLit || state.get(Properties.LIT) != (isLit && isPowered)) {
-            boolean newLit = isLit && isPowered;
-            if (state.get(Properties.LIT) != newLit) {
-                world.setBlockState(pos, state.with(Properties.LIT, newLit), 3);
+        boolean shouldBeLit = isLit && isPowered;
+        if (state.get(Properties.LIT) != shouldBeLit) {
+            world.setBlockState(pos, state.with(Properties.LIT, shouldBeLit), 3);
+            changed = true;
 
-                if (state.contains(Properties.DOUBLE_BLOCK_HALF)) {
-                    DoubleBlockHalf half = state.get(Properties.DOUBLE_BLOCK_HALF);
-                    BlockPos otherPos = half == DoubleBlockHalf.LOWER ? pos.up() : pos.down();
-                    BlockState otherState = world.getBlockState(otherPos);
-                    if (otherState.isOf(state.getBlock())) {
-                        world.setBlockState(otherPos, otherState.with(Properties.LIT, newLit), 3);
-                    }
+            if (state.contains(Properties.DOUBLE_BLOCK_HALF)) {
+                DoubleBlockHalf half = state.get(Properties.DOUBLE_BLOCK_HALF);
+                BlockPos otherPos = half == DoubleBlockHalf.LOWER ? pos.up() : pos.down();
+                BlockState otherState = world.getBlockState(otherPos);
+                if (otherState.isOf(state.getBlock())) {
+                    world.setBlockState(otherPos, otherState.with(Properties.LIT, shouldBeLit), 3);
                 }
             }
+        }
+
+        if (changed) {
             entity.markDirty();
         }
     }

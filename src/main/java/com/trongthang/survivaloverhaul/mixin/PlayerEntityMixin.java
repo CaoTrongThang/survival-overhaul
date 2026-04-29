@@ -20,6 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import com.trongthang.survivaloverhaul.mechanics.temperature.ITemperatureData;
 import com.trongthang.survivaloverhaul.mechanics.temperature.TemperatureManager;
+import com.trongthang.survivaloverhaul.mechanics.temperature.TemperatureState;
 
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin extends LivingEntity implements IThirstData, IBodyDamageData, ITemperatureData {
@@ -64,8 +65,9 @@ public abstract class PlayerEntityMixin extends LivingEntity implements IThirstD
         this.dataTracker.startTracking(BodyDamageManager.RIGHT_LEG_HEALTH, 20.0f);
         this.dataTracker.startTracking(BodyDamageManager.LEFT_FOOT_HEALTH, 10.0f);
         this.dataTracker.startTracking(BodyDamageManager.RIGHT_FOOT_HEALTH, 10.0f);
-        this.dataTracker.startTracking(TemperatureManager.TEMPERATURE, 20.0f);
-        this.dataTracker.startTracking(TemperatureManager.TARGET_TEMPERATURE, 20.0f);
+        this.dataTracker.startTracking(TemperatureManager.BODY_TEMPERATURE, 20.0f);
+        this.dataTracker.startTracking(TemperatureManager.AMBIENT_TEMPERATURE, 20.0f);
+        this.dataTracker.startTracking(TemperatureManager.TEMPERATURE_STATE, TemperatureState.NORMAL.getId());
     }
 
     @Inject(method = "tick", at = @At("TAIL"))

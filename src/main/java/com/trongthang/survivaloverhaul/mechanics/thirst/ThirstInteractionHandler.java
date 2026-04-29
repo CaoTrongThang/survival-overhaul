@@ -30,11 +30,11 @@ public class ThirstInteractionHandler {
     }
 
     private static ActionResult onUseBlock(PlayerEntity player, World world, Hand hand, BlockHitResult hitResult) {
-        return tryDrink(player, world, hand);
+        return tryDrink(player, world, hand, false);
     }
 
     private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, World world, Hand hand) {
-        ActionResult result = tryDrink(player, world, hand);
+        ActionResult result = tryDrink(player, world, hand, true);
         if (result.isAccepted()) {
             return TypedActionResult.success(player.getStackInHand(hand));
         }
@@ -42,15 +42,20 @@ public class ThirstInteractionHandler {
     }
 
     public static void requestDrink(ServerPlayerEntity player) {
-        tryDrink(player, player.getWorld(), Hand.MAIN_HAND);
+        tryDrink(player, player.getWorld(), Hand.MAIN_HAND, true);
     }
 
-    private static ActionResult tryDrink(PlayerEntity player, World world, Hand hand) {
+    private static ActionResult tryDrink(PlayerEntity player, World world, Hand hand, boolean allowRain) {
         if (!ModConfig.enableThirst) {
             return ActionResult.PASS;
         }
 
         if (hand != Hand.MAIN_HAND || !player.getStackInHand(hand).isEmpty()) {
+            return ActionResult.PASS;
+        }
+
+        ThirstManager thirstManager = ((IThirstData) player).survivalOverhaul$getThirstManager();
+        if (thirstManager.getThirstLevel() >= ModConfig.maxThirstLevel) {
             return ActionResult.PASS;
         }
 
@@ -60,7 +65,7 @@ public class ThirstInteractionHandler {
         boolean isPurified = false;
 
         // 1. Check Rain
-        if (ModConfig.enableRainDrinking && world.hasRain(player.getBlockPos().up())) {
+        if (allowRain && ModConfig.enableRainDrinking && world.hasRain(player.getBlockPos().up())) {
             drinkingRain = true;
         }
 
@@ -84,19 +89,16 @@ public class ThirstInteractionHandler {
 
         // --- Server-only: apply thirst and effects ---
         if (!world.isClient) {
-            ThirstManager thirstManager = ((IThirstData) player).survivalOverhaul$getThirstManager();
+            // Already have thirstManager from above
+            float thirstToAdd = drinkingRain ? ModConfig.thirstFromRain : ModConfig.thirstFromWater;
+            thirstManager.add((int) thirstToAdd, thirstToAdd * 0.05f);
 
-            if (thirstManager.getThirstLevel() < ModConfig.maxThirstLevel) {
-                float thirstToAdd = drinkingRain ? ModConfig.thirstFromRain : ModConfig.thirstFromWater;
-                thirstManager.add((int) thirstToAdd, thirstToAdd * 0.05f);
-
-                if (!drinkingRain && !isPurified
-                        && world.random.nextFloat() < ModConfig.dehydrationChanceFromSources) {
-                    player.addStatusEffect(new StatusEffectInstance(ModEffects.THIRST, 400, 0));
-                }
-
-                ModNetworking.sync((ServerPlayerEntity) player, (IThirstData) player);
+            if (!drinkingRain && !isPurified
+                    && world.random.nextFloat() < ModConfig.dehydrationChanceFromSources) {
+                player.addStatusEffect(new StatusEffectInstance(ModEffects.THIRST, 400, 0));
             }
+
+            ModNetworking.sync((ServerPlayerEntity) player, (IThirstData) player);
 
             world.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ENTITY_GENERIC_DRINK, SoundCategory.PLAYERS, 0.5f,

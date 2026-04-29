@@ -2,6 +2,10 @@ package com.trongthang.survivaloverhaul.client;
 
 import com.trongthang.survivaloverhaul.SurvivalOverhaul;
 import com.trongthang.survivaloverhaul.client.render.ScreenTemperatureOverlay;
+import com.trongthang.survivaloverhaul.screen.BoilerScreen;
+import com.trongthang.survivaloverhaul.screen.IceBoxScreen;
+import com.trongthang.survivaloverhaul.screen.ModScreenHandlers;
+
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 
 public class ModClient {
@@ -12,10 +16,10 @@ public class ModClient {
         HudRenderCallback.EVENT.register(ScreenTemperatureOverlay::render);
 
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(
-                com.trongthang.survivaloverhaul.screen.ModScreenHandlers.BOILER_SCREEN_HANDLER,
-                com.trongthang.survivaloverhaul.screen.BoilerScreen::new);
+                ModScreenHandlers.BOILER_SCREEN_HANDLER,
+                BoilerScreen::new);
         net.minecraft.client.gui.screen.ingame.HandledScreens.register(
-                com.trongthang.survivaloverhaul.screen.ModScreenHandlers.ICE_BOX_SCREEN_HANDLER,
-                com.trongthang.survivaloverhaul.screen.IceBoxScreen::new);
+                ModScreenHandlers.ICE_BOX_SCREEN_HANDLER,
+                IceBoxScreen::new);
     }
 }

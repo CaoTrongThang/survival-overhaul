@@ -5,6 +5,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.screen.ArrayPropertyDelegate;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
@@ -14,7 +15,7 @@ public class BoilerScreenHandler extends ScreenHandler {
     private final PropertyDelegate propertyDelegate;
 
     public BoilerScreenHandler(int syncId, PlayerInventory playerInventory) {
-        this(syncId, playerInventory, new SimpleInventory(4), new net.minecraft.screen.ArrayPropertyDelegate(3));
+        this(syncId, playerInventory, new SimpleInventory(4), new ArrayPropertyDelegate(3));
     }
 
     public BoilerScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory,

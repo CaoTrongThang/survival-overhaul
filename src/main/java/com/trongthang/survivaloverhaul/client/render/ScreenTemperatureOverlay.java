@@ -28,7 +28,7 @@ public class ScreenTemperatureOverlay {
 
         float temperature = 20.0f;
         if (player instanceof ITemperatureData tempData) {
-            temperature = tempData.survivalOverhaul$getTemperatureManager().getTemperature();
+            temperature = tempData.survivalOverhaul$getTemperatureManager().getBodyTemperature();
         }
 
         Identifier texture = null;

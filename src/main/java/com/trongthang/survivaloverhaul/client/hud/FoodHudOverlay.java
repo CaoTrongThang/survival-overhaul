@@ -16,8 +16,7 @@ public class FoodHudOverlay {
 
     public static boolean shouldRenderCustomFoodBar(PlayerEntity player) {
         if (player instanceof ITemperatureData tempData) {
-            float temperature = tempData.survivalOverhaul$getTemperatureManager().getTemperature();
-            return temperature < 15.0f; // COLD or FROSTBITE
+            return tempData.survivalOverhaul$getTemperatureManager().isCold();
         }
         return false;
     }

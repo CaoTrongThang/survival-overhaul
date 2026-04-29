@@ -2,6 +2,7 @@ package com.trongthang.survivaloverhaul.mechanics.temperature;
 
 import com.trongthang.survivaloverhaul.block.custom.BoilerBlock;
 import com.trongthang.survivaloverhaul.block.custom.IceBoxBlock;
+import com.trongthang.survivaloverhaul.compat.FabricSeasonsCompat;
 import com.trongthang.survivaloverhaul.config.ModConfig;
 import com.trongthang.survivaloverhaul.effect.ModEffects;
 
@@ -22,10 +23,12 @@ import net.minecraft.world.World;
 public class TemperatureManager {
     private final LivingEntity entity;
 
-    public static final TrackedData<Float> TEMPERATURE = DataTracker.registerData(PlayerEntity.class,
+    public static final TrackedData<Float> BODY_TEMPERATURE = DataTracker.registerData(PlayerEntity.class,
             TrackedDataHandlerRegistry.FLOAT);
-    public static final TrackedData<Float> TARGET_TEMPERATURE = DataTracker.registerData(PlayerEntity.class,
+    public static final TrackedData<Float> AMBIENT_TEMPERATURE = DataTracker.registerData(PlayerEntity.class,
             TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Integer> TEMPERATURE_STATE = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.INTEGER);
 
     public static final float MIN_TEMP = 0.0f;
     public static final float MAX_TEMP = 40.0f;
@@ -35,142 +38,254 @@ public class TemperatureManager {
         this.entity = entity;
     }
 
+    /**
+     * Main update loop for temperature mechanics.
+     * Core concept: Body Temperature tries to reach Ambient Temperature over time.
+     */
     public void update() {
-        if (!entity.getWorld().isClient) {
-            // Run calculation every second
-            if (entity.age % 20 != 0)
-                return;
+        if (entity.getWorld().isClient)
+            return;
 
-            float current = getTemperature();
-            float target = NORMAL_TEMP;
+        // Run calculation every second (20 ticks) to save performance
+        if (entity.age % 20 != 0)
+            return;
 
-            // Environment Modifiers
-            World world = entity.getWorld();
-            BlockPos pos = entity.getBlockPos();
+        float ambientTemp = calculateAmbientTemperature();
+        setAmbientTemperature(ambientTemp);
 
-            float biomeTemp = world.getBiome(pos).value().getTemperature();
-            target = 20.0f + (biomeTemp - 0.8f) * 20.0f;
+        updateBodyTemperature(ambientTemp);
 
-            if (!world.isDay())
-                target -= 5.0f;
-            if (world.isRaining())
-                target -= 5.0f;
-            if (entity.isSubmergedInWater())
-                target -= 10.0f;
+        // Apply effects based on the updated state
+        applyTemperatureEffects();
+    }
 
-            float totalHeatInfluence = 0;
-            float totalColdInfluence = 0;
-            int range = ModConfig.temperatureDetectionRange;
+    /**
+     * Calculates the "Target" temperature the player's body will try to reach.
+     * Based on Biome, Day/Night, Rain, and nearby Thermal Sources (Fire, Ice, etc.)
+     */
+    private float calculateAmbientTemperature() {
+        World world = entity.getWorld();
+        BlockPos pos = entity.getBlockPos();
 
-            for (BlockPos iterPos : BlockPos.iterate(pos.add(-range, -range, -range), pos.add(range, range, range))) {
-                BlockState state = world.getBlockState(iterPos);
-                if (state.isOf(Blocks.CAMPFIRE) || state.isOf(Blocks.LAVA) || state.isOf(Blocks.FIRE)
-                        || (state.isOf(com.trongthang.survivaloverhaul.block.ModBlocks.BOILER)
-                                && state.get(BoilerBlock.LIT))) {
-                    double distanceSq = pos.getSquaredDistance(iterPos);
-                    if (distanceSq < 1.0)
-                        distanceSq = 1.0;
-                    totalHeatInfluence += 1.0f / (float) distanceSq;
-                    if (state.isOf(com.trongthang.survivaloverhaul.block.ModBlocks.BOILER)) {
-                        totalHeatInfluence += 0.5f / (float) distanceSq; // Boiler is stronger than regular sources?
-                    }
-                } else if (state.isOf(Blocks.ICE) || state.isOf(Blocks.PACKED_ICE) || state.isOf(Blocks.BLUE_ICE)
-                        || (state.isOf(com.trongthang.survivaloverhaul.block.ModBlocks.ICE_BOX)
-                                && state.get(IceBoxBlock.LIT))) {
-                    double distanceSq = pos.getSquaredDistance(iterPos);
-                    if (distanceSq < 1.0)
-                        distanceSq = 1.0;
-                    totalColdInfluence += 1.0f / (float) distanceSq;
-                    if (state.isOf(com.trongthang.survivaloverhaul.block.ModBlocks.ICE_BOX)) {
-                        totalColdInfluence += 0.5f / (float) distanceSq;
-                    }
+        // 1. Base Biome Temperature
+        float biomeTemp = world.getBiome(pos).value().getTemperature();
+        float ambient = 20.0f + (biomeTemp - 0.8f) * 20.0f;
+
+        // 1b. Season modifier (optional Fabric Seasons compat)
+        if (FabricSeasonsCompat.isLoaded()) {
+            ambient += FabricSeasonsCompat.getSeasonTempModifier(world);
+        }
+
+        // 2. Environmental Modifiers
+        if (!world.isDay())
+            ambient -= 5.0f;
+        if (world.isRaining())
+            ambient -= 5.0f;
+        if (entity.isSubmergedInWater())
+            ambient -= 10.0f;
+
+        // 3. Thermal Source Influence (Blocks)
+        float thermalInfluence = calculateThermalSourceInfluence();
+        ambient += thermalInfluence;
+
+        // 4. Special cases (Lava/Fire)
+        if (entity.isInLava()) {
+            ambient = MAX_TEMP;
+        } else if (entity.isOnFire()) {
+            ambient = Math.max(ambient, 35.0f);
+        }
+
+        return MathHelper.clamp(ambient, MIN_TEMP, MAX_TEMP);
+    }
+
+    /**
+     * Scans nearby blocks for heat or cold sources.
+     * Returns a total temperature shift value.
+     */
+    private float calculateThermalSourceInfluence() {
+        World world = entity.getWorld();
+        BlockPos pos = entity.getBlockPos();
+        float heat = 0;
+        float cold = 0;
+        int range = ModConfig.temperatureDetectionRange;
+
+        for (BlockPos iterPos : BlockPos.iterate(pos.add(-range, -range, -range), pos.add(range, range, range))) {
+            BlockState state = world.getBlockState(iterPos);
+            double distanceSq = pos.getSquaredDistance(iterPos);
+            if (distanceSq < 1.0)
+                distanceSq = 1.0;
+
+            if (isHeatSource(state)) {
+                heat += 1.0f / (float) distanceSq;
+                if (state.isOf(com.trongthang.survivaloverhaul.block.ModBlocks.BOILER)) {
+                    heat += 0.5f / (float) distanceSq; // Boilers are more effective
+                }
+            } else if (isColdSource(state)) {
+                cold += 1.0f / (float) distanceSq;
+                if (state.isOf(com.trongthang.survivaloverhaul.block.ModBlocks.ICE_BOX)) {
+                    cold += 0.5f / (float) distanceSq; // Ice Boxes are more effective
                 }
             }
+        }
 
-            if (totalHeatInfluence > 0)
-                target += Math.min(20.0f, totalHeatInfluence * 10.0f);
-            if (totalColdInfluence > 0)
-                target -= Math.min(15.0f, totalColdInfluence * 10.0f);
+        float totalModifier = 0;
+        if (heat > 0)
+            totalModifier += Math.min(20.0f, heat * 10.0f);
+        if (cold > 0)
+            totalModifier -= Math.min(15.0f, cold * 10.0f);
 
-            float changeRate = ModConfig.temperatureChangeSpeed;
+        return totalModifier;
+    }
 
-            if (entity.isInLava()) {
-                target = MAX_TEMP;
-                changeRate = 2.0f; // Very fast
-            } else if (entity.isOnFire()) {
-                target = Math.max(target, 35.0f);
-                changeRate = Math.max(changeRate, 0.5f);
+    private boolean isHeatSource(BlockState state) {
+        return state.isOf(Blocks.CAMPFIRE) || state.isOf(Blocks.LAVA) || state.isOf(Blocks.FIRE)
+                || (state.isOf(com.trongthang.survivaloverhaul.block.ModBlocks.BOILER) && state.get(BoilerBlock.LIT));
+    }
+
+    private boolean isColdSource(BlockState state) {
+        return state.isOf(Blocks.ICE) || state.isOf(Blocks.PACKED_ICE) || state.isOf(Blocks.BLUE_ICE)
+                || (state.isOf(com.trongthang.survivaloverhaul.block.ModBlocks.ICE_BOX) && state.get(IceBoxBlock.LIT));
+    }
+
+    /**
+     * Moves the player's Body Temperature towards the Ambient Temperature.
+     */
+    private void updateBodyTemperature(float ambientTemp) {
+        float currentBodyTemp = getBodyTemperature();
+        float speed = ModConfig.temperatureChangeSpeed;
+
+        // Lava/Fire makes temperature change much faster
+        if (entity.isInLava()) {
+            speed = 2.0f;
+        } else if (entity.isOnFire()) {
+            speed = Math.max(speed, 0.5f);
+        }
+
+        // Scaled change rate: the further you are from target, the faster you change
+        float diff = Math.abs(currentBodyTemp - ambientTemp);
+        if (diff > 5.0f) {
+            speed *= (diff / 5.0f);
+        }
+
+        // Apply the change
+        if (currentBodyTemp < ambientTemp) {
+            setBodyTemperature(currentBodyTemp + speed);
+        } else if (currentBodyTemp > ambientTemp) {
+            setBodyTemperature(currentBodyTemp - speed);
+        }
+
+        // Update the discrete state (Normal, Cold, Freezing, etc.)
+        updateStableState(getBodyTemperature());
+    }
+
+    /**
+     * Applies status effects and exhaustion based on the current Temperature State.
+     */
+    private void applyTemperatureEffects() {
+        TemperatureState state = getState();
+
+        // 1. Status Effects (Dying conditions)
+        if (state == TemperatureState.FREEZING) {
+            entity.addStatusEffect(new StatusEffectInstance(ModEffects.FROSTBITE, 100, 0, false, false, true));
+        } else if (state == TemperatureState.HOT) {
+            entity.addStatusEffect(new StatusEffectInstance(ModEffects.HEATSTROKE, 100, 0, false, false, true));
+        }
+
+        // 2. Gameplay impacts (Hunger/Thirst exhaustion)
+        if (entity instanceof PlayerEntity player && !player.getAbilities().invulnerable) {
+            if (isCold()) {
+                player.getHungerManager().addExhaustion(0.1f); // Cold makes you hungrier
             }
-
-            target = MathHelper.clamp(target, MIN_TEMP, MAX_TEMP);
-            setTargetTemperature(target);
-
-            // Scaled change rate based on distance to target
-            float diff = Math.abs(current - target);
-            if (diff > 5.0f) {
-                changeRate *= (diff / 5.0f);
-            }
-
-            if (current < target) {
-                setTemperature(current + changeRate);
-            } else if (current > target) {
-                setTemperature(current - changeRate);
-            }
-
-            // Status effects loop
-            float newTemp = getTemperature();
-            if (newTemp <= 5.0f) {
-                entity.addStatusEffect(new StatusEffectInstance(
-                        ModEffects.FROSTBITE, 100, 0, false, false, true));
-            } else if (newTemp >= 32.5f) {
-                entity.addStatusEffect(new StatusEffectInstance(
-                        ModEffects.HEATSTROKE, 100, 0, false, false, true));
-            }
-
-            // Apply gameplay effects for "Frozen" and "Hot" conditions
-            // These align with the HUD icons changing
-            if (entity instanceof PlayerEntity player && !player.getAbilities().invulnerable) {
-                // Frozen Food (Hunger) - Temperature < 15.0
-                if (newTemp < 15.0f) {
-                    player.getHungerManager().addExhaustion(0.1f);
-                }
-
-                // Hot Thirst - Temperature > 25.0
-                if (newTemp > 25.0f) {
-                    ((IThirstData) player).survivalOverhaul$getThirstManager().addExhaustion(0.2f);
-                }
+            if (isHot()) {
+                ((IThirstData) player).survivalOverhaul$getThirstManager().addExhaustion(0.2f); // Heat makes you
+                                                                                                // thirstier
             }
         }
     }
 
-    public float getTemperature() {
-        return entity.getDataTracker().get(TEMPERATURE);
+    private void updateStableState(float temp) {
+        TemperatureState current = getState();
+        TemperatureState next = current;
+
+        boolean hasFrostbite = entity.hasStatusEffect(ModEffects.FROSTBITE);
+        boolean hasHeatstroke = entity.hasStatusEffect(ModEffects.HEATSTROKE);
+
+        // Priority states (Dying)
+        if (temp <= 5.0f || hasFrostbite) {
+            next = TemperatureState.FREEZING;
+        } else if (temp >= 32.5f || hasHeatstroke) {
+            next = TemperatureState.HOT;
+        }
+        // Hysteresis for COLD
+        else if (temp < 14.0f) {
+            next = TemperatureState.COLD;
+        } else if (current == TemperatureState.COLD && temp < 15.5f) {
+            next = TemperatureState.COLD;
+        }
+        // Hysteresis for WARM
+        else if (temp > 26.0f) {
+            next = TemperatureState.WARM;
+        } else if (current == TemperatureState.WARM && temp > 24.5f) {
+            next = TemperatureState.WARM;
+        }
+        // Otherwise Normal
+        else {
+            next = TemperatureState.NORMAL;
+        }
+
+        if (next != current) {
+            setStableState(next);
+        }
     }
 
-    public void setTemperature(float temperature) {
+    public TemperatureState getState() {
+        return TemperatureState.fromId(entity.getDataTracker().get(TEMPERATURE_STATE));
+    }
+
+    public void setStableState(TemperatureState state) {
+        entity.getDataTracker().set(TEMPERATURE_STATE, state.getId());
+    }
+
+    public boolean isCold() {
+        TemperatureState state = getState();
+        return state == TemperatureState.COLD || state == TemperatureState.FREEZING;
+    }
+
+    public boolean isHot() {
+        TemperatureState state = getState();
+        return state == TemperatureState.WARM || state == TemperatureState.HOT;
+    }
+
+    public float getBodyTemperature() {
+        return entity.getDataTracker().get(BODY_TEMPERATURE);
+    }
+
+    public void setBodyTemperature(float temperature) {
         float newTemp = MathHelper.clamp(temperature, MIN_TEMP, MAX_TEMP);
-        entity.getDataTracker().set(TEMPERATURE, newTemp);
+        entity.getDataTracker().set(BODY_TEMPERATURE, newTemp);
     }
 
-    public float getTargetTemperature() {
-        return entity.getDataTracker().get(TARGET_TEMPERATURE);
+    public float getAmbientTemperature() {
+        return entity.getDataTracker().get(AMBIENT_TEMPERATURE);
     }
 
-    public void setTargetTemperature(float target) {
-        entity.getDataTracker().set(TARGET_TEMPERATURE, MathHelper.clamp(target, MIN_TEMP, MAX_TEMP));
+    public void setAmbientTemperature(float target) {
+        entity.getDataTracker().set(AMBIENT_TEMPERATURE, MathHelper.clamp(target, MIN_TEMP, MAX_TEMP));
     }
 
     public void readNbt(NbtCompound nbt) {
         if (nbt.contains("Temperature")) {
-            setTemperature(nbt.getFloat("Temperature"));
-            setTargetTemperature(nbt.getFloat("Temperature"));
+            setBodyTemperature(nbt.getFloat("Temperature"));
+            setAmbientTemperature(nbt.getFloat("Temperature"));
+            updateStableState(getBodyTemperature());
         } else {
-            setTemperature(NORMAL_TEMP);
-            setTargetTemperature(NORMAL_TEMP);
+            setBodyTemperature(NORMAL_TEMP);
+            setAmbientTemperature(NORMAL_TEMP);
+            setStableState(TemperatureState.NORMAL);
         }
     }
 
     public void writeNbt(NbtCompound nbt) {
-        nbt.putFloat("Temperature", getTemperature());
+        nbt.putFloat("Temperature", getBodyTemperature());
     }
 }

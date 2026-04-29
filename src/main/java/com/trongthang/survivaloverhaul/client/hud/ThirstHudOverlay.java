@@ -35,7 +35,7 @@ public class ThirstHudOverlay {
 
             float temperature = 20.0f;
             if (player instanceof ITemperatureData tempData) {
-                temperature = tempData.survivalOverhaul$getTemperatureManager().getTemperature();
+                temperature = tempData.survivalOverhaul$getTemperatureManager().getBodyTemperature();
             }
             boolean isHot = temperature > 25.0f;
             int textureY = isHot ? 9 : 0; // Row 2 (y=9) is for "hot" thirst variants

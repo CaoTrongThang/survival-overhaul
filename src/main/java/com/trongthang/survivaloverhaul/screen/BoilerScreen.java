@@ -19,7 +19,20 @@ public class BoilerScreen extends HandledScreen<BoilerScreenHandler> {
     @Override
     protected void init() {
         super.init();
-        titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2;
+        if (title.getString().isEmpty()) {
+            titleX = -1000; // Move it off-screen just in case
+        } else {
+            titleX = (backgroundWidth - textRenderer.getWidth(title)) / 2;
+        }
+    }
+
+    @Override
+    protected void drawForeground(DrawContext context, int mouseX, int mouseY) {
+        if (!this.title.getString().isEmpty()) {
+            context.drawText(this.textRenderer, this.title, this.titleX, this.titleY, 4210752, false);
+        }
+        context.drawText(this.textRenderer, this.playerInventoryTitle, this.playerInventoryTitleX,
+                this.playerInventoryTitleY, 4210752, false);
     }
 
     @Override

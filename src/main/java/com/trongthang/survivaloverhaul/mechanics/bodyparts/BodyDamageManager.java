@@ -12,10 +12,15 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
-import com.trongthang.survivaloverhaul.effect.ModEffects;
-import com.trongthang.survivaloverhaul.config.ModConfig;
+import net.minecraft.registry.tag.DamageTypeTags;
+import net.minecraft.util.Arm;
+import net.minecraft.util.Hand;
+
 import com.trongthang.survivaloverhaul.mechanics.temperature.ITemperatureData;
 import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
+import com.trongthang.survivaloverhaul.mixin.LivingEntityAccessor;
+import com.trongthang.survivaloverhaul.config.ModConfig;
+import com.trongthang.survivaloverhaul.effect.ModEffects;
 
 public class BodyDamageManager {
     private final LivingEntity entity;
@@ -150,7 +155,7 @@ public class BodyDamageManager {
             boolean canApplyFeelingGood = true;
 
             if (entity instanceof PlayerEntity player) {
-                float temp = ((ITemperatureData) player).survivalOverhaul$getTemperatureManager().getTemperature();
+                float temp = ((ITemperatureData) player).survivalOverhaul$getTemperatureManager().getBodyTemperature();
                 int thirst = ((IThirstData) player).survivalOverhaul$getThirstManager().getThirstLevel();
 
                 // If player is too cold (< 15.0), too hot (> 25.0), or thirsty (< 10)
@@ -193,7 +198,7 @@ public class BodyDamageManager {
 
         float limbDamage = amount * ModConfig.limbDamageMultiplier;
 
-        if (source.isOf(DamageTypes.FALL) || source.isOf(DamageTypes.HOT_FLOOR)
+        if (source.isIn(DamageTypeTags.IS_FALL) || source.isOf(DamageTypes.HOT_FLOOR)
                 || source.isOf(DamageTypes.SWEET_BERRY_BUSH)) {
             // Damage feet and legs
             float footDmg = limbDamage * 0.6f;
@@ -202,32 +207,54 @@ public class BodyDamageManager {
             damage(BodyPart.RIGHT_FOOT, footDmg / 2f);
             damage(BodyPart.LEFT_LEG, legDmg / 2f);
             damage(BodyPart.RIGHT_LEG, legDmg / 2f);
-        } else if (source.isOf(DamageTypes.FLY_INTO_WALL) || source.isOf(DamageTypes.FALLING_ANVIL)
-                || source.isOf(DamageTypes.FALLING_BLOCK)) {
+        } else if (source.isIn(DamageTypeTags.DAMAGES_HELMET) || source.isOf(DamageTypes.FLY_INTO_WALL)) {
             // Damage head
             damage(BodyPart.HEAD, limbDamage);
-        } else if (source.isOf(DamageTypes.STARVE) || source.isOf(DamageTypes.DROWN)) {
+        } else if (source.isIn(DamageTypeTags.IS_DROWNING) || source.isOf(DamageTypes.STARVE)) {
             // Damage torso
             damage(BodyPart.TORSO, limbDamage);
+        } else if (source.getName().equals("punch_block")) {
+            // Damage the specific hand being used (Main hand or Off hand)
+            // Respects left-handed/right-handed settings
+            Hand swingingHand = ((LivingEntityAccessor) entity).getPreferredHand();
+            if (swingingHand == null)
+                swingingHand = Hand.MAIN_HAND;
+
+            Arm arm = (swingingHand == Hand.MAIN_HAND) ? entity.getMainArm()
+                    : (entity.getMainArm() == Arm.LEFT ? Arm.RIGHT : Arm.LEFT);
+
+            damage(arm == Arm.LEFT ? BodyPart.LEFT_ARM : BodyPart.RIGHT_ARM, limbDamage);
         } else {
-            // Randomly distribute to other parts
-            BodyPart[] parts = BodyPart.values();
-            BodyPart hitPart = parts[entity.getRandom().nextInt(parts.length)];
+            // Detect which body part was actually hit using attacker/projectile position.
+            // Falls back to random for AoE, fire, magic, etc. (no positional data).
+            BodyPart hitPart = HitLocationDetector.detect(entity, source);
             damage(hitPart, limbDamage);
 
-            // If it's a big damage, splash some to torso
+            // If it's a big damage, splash some to torso.
+            // Splash damage indicates internal injury/blunt force, so it ignores 50% of
+            // armor.
             if (limbDamage > 3.0f && hitPart != BodyPart.TORSO) {
-                damage(BodyPart.TORSO, limbDamage * 0.3f);
+                damage(BodyPart.TORSO, limbDamage * 0.3f, true);
             }
         }
     }
 
     public void damage(BodyPart part, float amount) {
+        damage(part, amount, false);
+    }
+
+    public void damage(BodyPart part, float amount, boolean ignoreArmor) {
         if (amount <= 0)
             return;
 
-        // Apply armor reduction for this specific limb
-        amount *= (1.0f - getLimbArmorReduction(part));
+        // Apply armor reduction for this specific limb unless it's partially ignoring
+        // armor (splash/internal)
+        if (!ignoreArmor) {
+            amount *= (1.0f - getLimbArmorReduction(part));
+        } else {
+            // Internal splash damage ignores 50% of the armor's protection
+            amount *= (1.0f - getLimbArmorReduction(part) * 0.5f);
+        }
 
         setHealth(part, getHealth(part) - amount);
     }
