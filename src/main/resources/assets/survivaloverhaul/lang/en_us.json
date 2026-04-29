@@ -8,11 +8,21 @@
     "effect.survivaloverhaul.hard_falling": "Hard Falling",
     "effect.survivaloverhaul.vulnerability": "Vulnerability",
     "effect.survivaloverhaul.feeling_good": "I'm Feeling Good",
+    "effect.survivaloverhaul.frostbite": "Frostbite",
+    "effect.survivaloverhaul.heatstroke": "Heatstroke",
+    "effect.survivaloverhaul.cooling": "Cooling",
+    "effect.survivaloverhaul.warming": "Warming",
+    "item.survivaloverhaul.bowl_of_fire": "Bowl of Fire",
+    "item.survivaloverhaul.bowl_of_ice": "Bowl of Ice",
     "category.survivaloverhaul.thirst": "Thirst",
     "key.survivaloverhaul.open_body_damage_screen": "Open Body Status",
     "category.survivaloverhaul.keys": "Survival Overhaul",
     "screen.survivaloverhaul.body_damage": "Body Status",
     "block.survivaloverhaul.boiler": "Boiler",
     "block.survivaloverhaul.ice_box": "Ice Box",
-    "itemgroup.survival_overhaul": "Survival Overhaul"
+    "block.survivaloverhaul.purified_water": "Purified Water",
+    "itemgroup.survival_overhaul": "Survival Overhaul",
+    "survivaloverhaul.category.thirst": "Thirst",
+    "survivaloverhaul.category.temperature": "Temperature",
+    "survivaloverhaul.category.bodyparts": "Body Damage"
 }

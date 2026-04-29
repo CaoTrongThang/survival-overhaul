@@ -1,6 +1,7 @@
 package com.trongthang.survivaloverhaul.item.custom;
 
 import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
+import com.trongthang.survivaloverhaul.networking.ModNetworking;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -31,6 +32,7 @@ public class PurifiedWaterItem extends Item {
         if (user instanceof PlayerEntity player) {
             if (!world.isClient) {
                 ((IThirstData) player).survivalOverhaul$getThirstManager().add(10, 5.0f);
+                ModNetworking.sync((ServerPlayerEntity) player, (IThirstData) player);
             }
             if (!player.getAbilities().creativeMode) {
                 stack.decrement(1);

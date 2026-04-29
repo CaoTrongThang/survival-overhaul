@@ -24,7 +24,6 @@ public class FrostbiteEffect extends StatusEffect {
 
     @Override
     public boolean canApplyUpdateEffect(int duration, int amplifier) {
-        // Apply effect every 40 ticks (2 seconds)
-        return duration % 40 == 0;
+        return duration % 20 == 0;
     }
 }

@@ -29,6 +29,12 @@ public class ModEffects {
         public static final StatusEffect FEELING_GOOD = registerStatusEffect("feeling_good",
                         new FeelingGoodEffect(StatusEffectCategory.BENEFICIAL, 0xFFD700));
 
+        public static final StatusEffect WARMING = registerStatusEffect("warming",
+                        new WarmingEffect(StatusEffectCategory.BENEFICIAL, 0xFF4500));
+
+        public static final StatusEffect COOLING = registerStatusEffect("cooling",
+                        new CoolingEffect(StatusEffectCategory.BENEFICIAL, 0x00FFFF));
+
         public static StatusEffect registerStatusEffect(String name, StatusEffect statusEffect) {
                 return Registry.register(Registries.STATUS_EFFECT, new Identifier(SurvivalOverhaul.MOD_ID, name),
                                 statusEffect);

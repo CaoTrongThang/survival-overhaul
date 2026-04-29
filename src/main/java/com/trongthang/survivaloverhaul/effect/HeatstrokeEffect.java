@@ -25,6 +25,6 @@ public class HeatstrokeEffect extends StatusEffect {
 
     @Override
     public boolean canApplyUpdateEffect(int duration, int amplifier) {
-        return duration % 40 == 0;
+        return duration % 20 == 0;
     }
 }

@@ -1,0 +1,17 @@
+{
+	"bandage_use_1": {
+		"sounds": [
+			"survivaloverhaul:bandage_use_1"
+		]
+	},
+	"bandage_use_2": {
+		"sounds": [
+			"survivaloverhaul:bandage_use_2"
+		]
+	},
+	"drinking_poition": {
+		"sounds": [
+			"survivaloverhaul:drinking_poition"
+		]
+	}
+}

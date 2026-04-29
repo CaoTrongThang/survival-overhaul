@@ -7,10 +7,15 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.Identifier;
 import com.mojang.blaze3d.systems.RenderSystem;
+import java.util.EnumMap;
+import java.util.Map;
 
 public class BodyDamageHud {
     private static final Identifier ICONS = new Identifier("survivaloverhaul", "textures/gui/overlay.png");
     private static final int TEX_WIDTH = 16;
+
+    private static final Map<BodyPart, Float> lastHealth = new EnumMap<>(BodyPart.class);
+    private static final Map<BodyPart, Long> impactTime = new EnumMap<>(BodyPart.class);
 
     public static void render(DrawContext context, MinecraftClient client, int scaledWidth, int scaledHeight) {
         if (!ModConfig.enableBodyDamage || client.player == null || client.options.hudHidden)
@@ -57,27 +62,43 @@ public class BodyDamageHud {
 
         RenderSystem.enableBlend();
 
+        long currentTime = net.minecraft.util.Util.getMeasuringTimeMs();
+
         // Draw each limb relative to (0,0) due to translation
-        drawLimb(context, 0, 0, BodyPart.HEAD);
-        drawLimb(context, 0, 0, BodyPart.TORSO);
-        drawLimb(context, 0, 0, BodyPart.LEFT_ARM);
-        drawLimb(context, 0, 0, BodyPart.RIGHT_ARM);
-        drawLimb(context, 0, 0, BodyPart.LEFT_LEG);
-        drawLimb(context, 0, 0, BodyPart.RIGHT_LEG);
-        drawLimb(context, 0, 0, BodyPart.LEFT_FOOT);
-        drawLimb(context, 0, 0, BodyPart.RIGHT_FOOT);
+        drawLimb(context, 0, 0, BodyPart.HEAD, currentTime);
+        drawLimb(context, 0, 0, BodyPart.TORSO, currentTime);
+        drawLimb(context, 0, 0, BodyPart.LEFT_ARM, currentTime);
+        drawLimb(context, 0, 0, BodyPart.RIGHT_ARM, currentTime);
+        drawLimb(context, 0, 0, BodyPart.LEFT_LEG, currentTime);
+        drawLimb(context, 0, 0, BodyPart.RIGHT_LEG, currentTime);
+        drawLimb(context, 0, 0, BodyPart.LEFT_FOOT, currentTime);
+        drawLimb(context, 0, 0, BodyPart.RIGHT_FOOT, currentTime);
 
         RenderSystem.disableBlend();
         context.getMatrices().pop();
     }
 
-    private static void drawLimb(DrawContext context, int xBase, int yBase, BodyPart part) {
+    private static void drawLimb(DrawContext context, int xBase, int yBase, BodyPart part, long currentTime) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null)
             return;
 
         IBodyDamageData data = (IBodyDamageData) client.player;
         float health = data.survivalOverhaul$getBodyDamageManager().getHealth(part);
+
+        float lastH = lastHealth.getOrDefault(part, -1f);
+        if (lastH == -1f) {
+            lastHealth.put(part, health);
+            lastH = health;
+        }
+
+        // If health dropped, trigger impact effect
+        if (health < lastH) {
+            impactTime.put(part, currentTime);
+        }
+
+        lastHealth.put(part, health);
+
         float healthRatio = health / part.getMaxHealth();
 
         int conditionX = 0;
@@ -158,6 +179,34 @@ public class BodyDamageHud {
             height = 4;
         }
 
+        // Apply visual impact effect (shake and flash red)
+        long lastImpact = impactTime.getOrDefault(part, 0L);
+        long timeSinceImpact = currentTime - lastImpact;
+        long impactDuration = 350; // 350 ms duration for the effect
+
+        boolean hasImpact = timeSinceImpact < impactDuration;
+
+        if (hasImpact) {
+            float progress = (float) timeSinceImpact / impactDuration; // 0.0 to 1.0
+
+            // Highlight red: start at bright red/orange, fade back to white (normal)
+            float gb = 0.2f + (0.8f * progress);
+            RenderSystem.setShaderColor(1.0f, gb, gb, 1.0f);
+
+            // Random shake that decays over time
+            float intensity = 1.0f - progress;
+            int shakeX = (int) (Math.sin(currentTime / 15.0) * 2.5 * intensity);
+            int shakeY = (int) (Math.cos(currentTime / 12.0) * 2.5 * intensity);
+
+            x += shakeX;
+            y += shakeY;
+        }
+
         context.drawTexture(ICONS, x, y, offsetX + texX, texY, width, height);
+
+        if (hasImpact) {
+            // Reset color so other limbs/HUD elements aren't tinted
+            RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+        }
     }
 }

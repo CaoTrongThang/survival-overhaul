@@ -1,5 +1,8 @@
 package com.trongthang.survivaloverhaul.config;
 
+import java.util.Arrays;
+import java.util.List;
+
 import eu.midnightdust.lib.config.MidnightConfig;
 
 public class ModConfig extends MidnightConfig {
@@ -17,6 +20,10 @@ public class ModConfig extends MidnightConfig {
 
     @Entry(category = "temperature", name = "Temperature Detection Range", min = 1, max = 8)
     public static int temperatureDetectionRange = 3;
+
+    @Entry(category = "temperature", name = "Dimension Temperature Modifiers")
+    public static List<String> dimensionTemperatureModifiers = Arrays.asList(
+            "minecraft:the_nether=20.0", "minecraft:the_end=-10.0", "welcometomyworld:void_dim=-20.0");
 
     // --- Thirst Depletion ---
     @Entry(category = "thirst", name = "Thirst Depletion Multiplier", isSlider = true, min = 0.0f, max = 10.0f)
@@ -52,7 +59,7 @@ public class ModConfig extends MidnightConfig {
     public static float dehydrationChanceFromItems = 0.1f;
 
     @Entry(category = "thirst", name = "Item Thirst Values")
-    public static java.util.List<String> itemThirstValues = java.util.Arrays.asList(
+    public static List<String> itemThirstValues = Arrays.asList(
             "minecraft:melon_slice=1", "minecraft:apple=1", "croptopia:coconut=1",
             "minecraft:potion=2", "wilderwild:split_coconut=2",
             "minecraft:milk_bucket=3", "minecraft:suspicious_stew=3", "minecraft:mushroom_stew=3",

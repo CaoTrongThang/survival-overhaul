@@ -7,6 +7,7 @@ import net.minecraft.entity.data.TrackedData;
 import net.minecraft.entity.data.TrackedDataHandlerRegistry;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
+import net.minecraft.entity.effect.StatusEffectCategory;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
@@ -154,6 +155,14 @@ public class BodyDamageManager {
             boolean isHealthy = (totalHealth / maxTotalHealth >= ModConfig.healthyBonusThreshold);
             boolean canApplyFeelingGood = true;
 
+            for (StatusEffectInstance instance : entity.getStatusEffects()) {
+                if (instance.getEffectType()
+                        .getCategory() == StatusEffectCategory.HARMFUL) {
+                    canApplyFeelingGood = false;
+                    break;
+                }
+            }
+
             if (entity instanceof PlayerEntity player) {
                 float temp = ((ITemperatureData) player).survivalOverhaul$getTemperatureManager().getBodyTemperature();
                 int thirst = ((IThirstData) player).survivalOverhaul$getThirstManager().getThirstLevel();
@@ -165,19 +174,8 @@ public class BodyDamageManager {
             }
 
             if (isHealthy && canApplyFeelingGood) {
-                int baseAmplifier = 0;
-                StatusEffectInstance currentEffect = entity.getStatusEffect(ModEffects.FEELING_GOOD);
-                if (currentEffect != null) {
-                    // If the existing effect is not our short-duration bonus, use its amplifier
-                    if (currentEffect.getDuration() > 45) {
-                        baseAmplifier = currentEffect.getAmplifier() + 1;
-                    } else {
-                        // It's likely our own bonus, keep the base logic or just refresh
-                        baseAmplifier = currentEffect.getAmplifier();
-                    }
-                }
                 entity.addStatusEffect(new StatusEffectInstance(
-                        ModEffects.FEELING_GOOD, 200, baseAmplifier, false, false, true));
+                        ModEffects.FEELING_GOOD, 200, 0, false, false, true));
             }
         }
     }
@@ -190,6 +188,15 @@ public class BodyDamageManager {
         for (BodyPart part : BodyPart.values()) {
             setHealth(part, part.getMaxHealth());
         }
+    }
+
+    public boolean isAllHealed() {
+        for (BodyPart part : BodyPart.values()) {
+            if (getHealth(part) < part.getMaxHealth()) {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void applyDamage(DamageSource source, float amount) {

@@ -3,6 +3,7 @@ package com.trongthang.survivaloverhaul.item.custom;
 import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
 import com.trongthang.survivaloverhaul.config.ModConfig;
 import com.trongthang.survivaloverhaul.mechanics.thirst.ThirstManager;
+import com.trongthang.survivaloverhaul.networking.ModNetworking;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -40,6 +41,7 @@ public class PurifiedWaterBucketItem extends BucketItem {
                 // Restores full thirst
                 ThirstManager manager = ((IThirstData) player).survivalOverhaul$getThirstManager();
                 manager.add(ModConfig.maxThirstLevel, 10.0f);
+                ModNetworking.sync((ServerPlayerEntity) player, (IThirstData) player);
             }
             if (!player.getAbilities().creativeMode) {
                 return new ItemStack(Items.BUCKET);

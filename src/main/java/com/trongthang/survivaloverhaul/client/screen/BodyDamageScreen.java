@@ -194,6 +194,7 @@ public class BodyDamageScreen extends Screen {
                 IBodyDamageData data = (IBodyDamageData) this.client.player;
                 if (data.survivalOverhaul$getBodyDamageManager().getHealth(clicked) < clicked.getMaxHealth()) {
                     sendHealLimbPacket(clicked);
+
                     this.close(); // 1 heal per bandage, then close and consume
                 }
             }

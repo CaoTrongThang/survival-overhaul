@@ -1,0 +1,21 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "key": {
+        "I": {
+            "item": "minecraft:iron_block"
+        },
+        "D": {
+            "item": "minecraft:cobbled_deepslate"
+        }
+    },
+    "pattern": [
+        "I I",
+        "DDD",
+        "DDD"
+    ],
+    "result": {
+        "item": "survivaloverhaul:boiler",
+        "count": 1
+    }
+}

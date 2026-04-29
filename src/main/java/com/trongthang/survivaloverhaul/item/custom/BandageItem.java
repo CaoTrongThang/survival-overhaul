@@ -23,6 +23,8 @@ public class BandageItem extends Item {
             if (ModConfig.enableBodyDamage) {
                 MinecraftClient.getInstance().setScreen(new BodyDamageScreen(true));
             }
+        } else {
+            user.getItemCooldownManager().set(this, 40);
         }
 
         return TypedActionResult.success(stack, world.isClient());

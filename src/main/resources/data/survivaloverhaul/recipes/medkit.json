@@ -1,0 +1,24 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "category": "misc",
+    "key": {
+        "G": {
+            "item": "minecraft:gold_ingot"
+        },
+        "B": {
+            "item": "minecraft:sweet_berries"
+        },
+        "S": {
+            "item": "survivaloverhaul:bandage"
+        }
+    },
+    "pattern": [
+        "GBG",
+        "BSB",
+        "GBG"
+    ],
+    "result": {
+        "item": "survivaloverhaul:medkit",
+        "count": 1
+    }
+}

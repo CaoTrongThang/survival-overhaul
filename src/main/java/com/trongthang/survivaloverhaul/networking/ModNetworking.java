@@ -4,6 +4,7 @@ import com.trongthang.survivaloverhaul.mechanics.thirst.ThirstInteractionHandler
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
 import com.trongthang.survivaloverhaul.SurvivalOverhaul;
+import com.trongthang.survivaloverhaul.SoundsManager;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.PacketByteBuf;
@@ -40,6 +41,10 @@ public class ModNetworking {
                             BodyPart part = BodyPart.valueOf(partName);
                             if (player instanceof IBodyDamageData data) {
                                 data.survivalOverhaul$getBodyDamageManager().heal(part, part.getMaxHealth());
+
+                                // Play sound
+                                SoundsManager.playRandomBandageSound(player.getWorld(), player);
+
                                 // Consume 1 of the held item (the bandage)
                                 net.minecraft.item.ItemStack held = player.getMainHandStack();
                                 if (!held.isEmpty()) {
