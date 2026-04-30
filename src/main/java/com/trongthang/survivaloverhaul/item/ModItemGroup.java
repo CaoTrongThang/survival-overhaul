@@ -17,6 +17,12 @@ public class ModItemGroup {
                     .icon(() -> new ItemStack(ModItems.BOWL_OF_FIRE)).entries((displayContext, entries) -> {
                         entries.add(ModItems.PURIFIED_WATER);
                         entries.add(ModItems.PURIFIED_WATER_BUCKET);
+                        entries.add(ModItems.EMPTY_CANTEEN);
+                        entries.add(ModItems.CANTEEN);
+                        entries.add(ModItems.PURIFIED_CANTEEN);
+                        entries.add(ModItems.EMPTY_LARGE_CANTEEN);
+                        entries.add(ModItems.LARGE_CANTEEN);
+                        entries.add(ModItems.PURIFIED_LARGE_CANTEEN);
                         entries.add(ModItems.MEDKIT);
                         entries.add(ModItems.BANDAGE);
                         entries.add(ModBlocks.BOILER);

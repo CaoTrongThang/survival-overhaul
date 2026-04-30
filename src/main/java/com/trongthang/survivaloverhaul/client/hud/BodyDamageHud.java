@@ -7,15 +7,20 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.util.Identifier;
 import com.mojang.blaze3d.systems.RenderSystem;
-import java.util.EnumMap;
-import java.util.Map;
 
 public class BodyDamageHud {
     private static final Identifier ICONS = new Identifier("survivaloverhaul", "textures/gui/overlay.png");
     private static final int TEX_WIDTH = 16;
 
-    private static final Map<BodyPart, Float> lastHealth = new EnumMap<>(BodyPart.class);
-    private static final Map<BodyPart, Long> impactTime = new EnumMap<>(BodyPart.class);
+    private static final float[] lastHealth = new float[BodyPart.values().length];
+    private static final long[] impactTime = new long[BodyPart.values().length];
+
+    static {
+        // Initialize lastHealth array with -1f so we know it's a first-time read
+        for (int i = 0; i < lastHealth.length; i++) {
+            lastHealth[i] = -1f;
+        }
+    }
 
     public static void render(DrawContext context, MinecraftClient client, int scaledWidth, int scaledHeight) {
         if (!ModConfig.enableBodyDamage || client.player == null || client.options.hudHidden)
@@ -85,19 +90,20 @@ public class BodyDamageHud {
 
         IBodyDamageData data = (IBodyDamageData) client.player;
         float health = data.survivalOverhaul$getBodyDamageManager().getHealth(part);
+        int partIndex = part.ordinal();
 
-        float lastH = lastHealth.getOrDefault(part, -1f);
+        float lastH = lastHealth[partIndex];
         if (lastH == -1f) {
-            lastHealth.put(part, health);
+            lastHealth[partIndex] = health;
             lastH = health;
         }
 
         // If health dropped, trigger impact effect
         if (health < lastH) {
-            impactTime.put(part, currentTime);
+            impactTime[partIndex] = currentTime;
         }
 
-        lastHealth.put(part, health);
+        lastHealth[partIndex] = health;
 
         float healthRatio = health / part.getMaxHealth();
 
@@ -180,7 +186,7 @@ public class BodyDamageHud {
         }
 
         // Apply visual impact effect (shake and flash red)
-        long lastImpact = impactTime.getOrDefault(part, 0L);
+        long lastImpact = impactTime[partIndex];
         long timeSinceImpact = currentTime - lastImpact;
         long impactDuration = 350; // 350 ms duration for the effect
 

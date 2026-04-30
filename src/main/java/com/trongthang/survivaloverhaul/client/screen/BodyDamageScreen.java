@@ -7,6 +7,7 @@ import com.trongthang.survivaloverhaul.networking.NetworkingConstants;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import com.trongthang.survivaloverhaul.config.ModConfig;
+import com.trongthang.survivaloverhaul.effect.ModEffects;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.network.PacketByteBuf;
@@ -21,6 +22,9 @@ public class BodyDamageScreen extends Screen {
     // Body part limb sprite sheet (normal + highlight on hover)
     private static final Identifier BODY_PARTS_TEXTURE = new Identifier("survivaloverhaul",
             "textures/gui/body_parts_screen.png");
+    // Overlay texture (shared with TemperatureHudOverlay) — arrow strips live here
+    private static final Identifier OVERLAY_TEXTURE = new Identifier("survivaloverhaul",
+            "textures/gui/overlay.png");
 
     // Background size
     private static final int BG_WIDTH = 176;
@@ -35,6 +39,18 @@ public class BodyDamageScreen extends Screen {
     // In body_parts_screen.png, highlighted version is offset 128 pixels to the
     // right
     private static final int HIGHLIGHT_OFFSET_X = 128;
+
+    // Info box texture region in body_health_screen.png
+    private static final int INFO_BOX_U = 178;
+    private static final int INFO_BOX_V = 112;
+    private static final int INFO_BOX_WIDTH = 74;
+    private static final int INFO_BOX_HEIGHT = 70;
+    private static final int INFO_TEXT_COLOR = 0xD2C4AE;
+
+    // Passive buff arrow strip (body_health_screen.png, V=240, 13 frames of 16x16)
+    private static final int ARROW_FRAME_WIDTH = 16;
+    private static final int ARROW_FRAME_HEIGHT = 16;
+    private static final int ARROW_STRIP_V = 240;
 
     private final boolean isBandageMode;
 
@@ -65,6 +81,61 @@ public class BodyDamageScreen extends Screen {
 
         // Draw background panel
         context.drawTexture(BG_TEXTURE, leftPos, topPos, 0, 0, BG_WIDTH, BG_HEIGHT);
+
+        // Draw info box to the right of the main panel if enabled
+        if (ModConfig.enableHealthyBonus) {
+            int infoBoxX = leftPos + BG_WIDTH + 4;
+            int infoBoxY = topPos + (BG_HEIGHT - INFO_BOX_HEIGHT) / 2;
+            context.drawTexture(BG_TEXTURE, infoBoxX, infoBoxY,
+                    INFO_BOX_U, INFO_BOX_V, INFO_BOX_WIDTH, INFO_BOX_HEIGHT);
+
+            // Render wrapped text inside the info box
+            float textScale = 0.7f;
+            int paddingLeft = 10;
+            int paddingRight = 10;
+            int paddingTop = 12;
+            int maxTextWidth = (int) ((INFO_BOX_WIDTH - paddingLeft - paddingRight) / textScale);
+
+            context.getMatrices().push();
+            context.getMatrices().scale(textScale, textScale, 1.0f);
+
+            float scaledX = (infoBoxX + paddingLeft) / textScale;
+            float scaledY = (infoBoxY + paddingTop) / textScale;
+
+            java.util.List<net.minecraft.text.OrderedText> lines = this.textRenderer.wrapLines(
+                    Text.translatable("screen.survivaloverhaul.healthy_buff_info"), maxTextWidth);
+            for (net.minecraft.text.OrderedText line : lines) {
+                context.drawText(this.textRenderer, line, (int) scaledX, (int) scaledY, INFO_TEXT_COLOR, false);
+                scaledY += (this.textRenderer.fontHeight + 1);
+            }
+            context.getMatrices().pop();
+
+            // Draw animated buff arrows at bottom-left and bottom-right of the main panel
+            // when the player has the Feeling Good effect
+            if (this.client.player.hasStatusEffect(ModEffects.FEELING_GOOD)) {
+                // 13 frames, each 16px wide; reversed for upward animation
+                int totalFrames = 13;
+                int frame = totalFrames - 1 - (this.client.player.age / 2) % totalFrames;
+                int arrowU = ARROW_FRAME_WIDTH * frame;
+
+                int centerX = leftPos + BG_WIDTH / 2;
+                int centerY = topPos + BG_HEIGHT / 2;
+                int arrowY = centerY + 10; // Shifted down a bit
+
+                // Left of center
+                context.drawTexture(OVERLAY_TEXTURE,
+                        centerX - 70,
+                        arrowY,
+                        arrowU, ARROW_STRIP_V,
+                        ARROW_FRAME_WIDTH, ARROW_FRAME_HEIGHT);
+                // Right of center
+                context.drawTexture(OVERLAY_TEXTURE,
+                        centerX + 54,
+                        arrowY,
+                        arrowU, ARROW_STRIP_V,
+                        ARROW_FRAME_WIDTH, ARROW_FRAME_HEIGHT);
+            }
+        }
 
         if (isBandageMode) {
             context.drawCenteredTextWithShadow(this.textRenderer,

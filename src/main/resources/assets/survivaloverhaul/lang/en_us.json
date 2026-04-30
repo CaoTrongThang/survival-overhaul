@@ -24,5 +24,14 @@
     "itemgroup.survival_overhaul": "Survival Overhaul",
     "survivaloverhaul.category.thirst": "Thirst",
     "survivaloverhaul.category.temperature": "Temperature",
-    "survivaloverhaul.category.bodyparts": "Body Damage"
+    "survivaloverhaul.category.bodyparts": "Body Damage",
+    "screen.survivaloverhaul.healthy_buff_info": "You'll get passive health regeneration and attack buff when you're healthy",
+    "item.survivaloverhaul.empty_canteen": "Empty Canteen",
+    "item.survivaloverhaul.canteen": "Canteen",
+    "item.survivaloverhaul.purified_canteen": "Purified Canteen",
+    "item.survivaloverhaul.empty_large_canteen": "Empty Large Canteen",
+    "item.survivaloverhaul.large_canteen": "Large Canteen",
+    "item.survivaloverhaul.purified_large_canteen": "Purified Large Canteen",
+    "tooltip.survivaloverhaul.canteen.uses": "Uses left: %1$d/%2$d",
+    "tooltip.survivaloverhaul.thirst_gain": "💧 +%d Thirst"
 }

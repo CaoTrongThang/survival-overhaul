@@ -14,6 +14,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.World;
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.registry.tag.DamageTypeTags;
+import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
+import com.trongthang.survivaloverhaul.mechanics.bodyparts.HitLocationDetector;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -61,6 +65,25 @@ public abstract class LivingEntityMixin {
             if (entity.hasStatusEffect(ModEffects.VULNERABILITY)) {
                 int amplifier = entity.getStatusEffect(ModEffects.VULNERABILITY).getAmplifier();
                 amount *= (1.0f + (amplifier + 1) * 0.2f);
+            }
+        }
+
+        if (ModConfig.enableHeadshotMultiplier) {
+            boolean isHeadHit = source.isIn(DamageTypeTags.DAMAGES_HELMET) || source.isOf(DamageTypes.FLY_INTO_WALL);
+            if (!isHeadHit && source.getAttacker() != null) {
+                isHeadHit = HitLocationDetector.detect(entity, source) == BodyPart.HEAD;
+            }
+            if (isHeadHit) {
+                if (!ModConfig.nullifyHeadshotWithHelmet || entity.getEquippedStack(EquipmentSlot.HEAD).isEmpty()) {
+                    amount *= ModConfig.headshotDamageMultiplier;
+                }
+            }
+        }
+
+        if (source.getAttacker() instanceof LivingEntity attacker) {
+            if (attacker.hasStatusEffect(ModEffects.FEELING_GOOD)) {
+                int amplifier = attacker.getStatusEffect(ModEffects.FEELING_GOOD).getAmplifier();
+                amount *= (1.0f + (amplifier + 1) * 0.05f);
             }
         }
 

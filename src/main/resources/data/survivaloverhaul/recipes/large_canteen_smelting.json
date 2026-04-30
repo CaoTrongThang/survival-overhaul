@@ -1,0 +1,9 @@
+{
+    "type": "minecraft:smelting",
+    "ingredient": {
+        "item": "survivaloverhaul:large_canteen"
+    },
+    "result": "survivaloverhaul:purified_large_canteen",
+    "experience": 0.3,
+    "cookingtime": 200
+}

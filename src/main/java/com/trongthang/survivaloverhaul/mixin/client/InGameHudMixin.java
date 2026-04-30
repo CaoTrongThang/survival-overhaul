@@ -4,6 +4,7 @@ import com.trongthang.survivaloverhaul.client.hud.BodyDamageHud;
 import com.trongthang.survivaloverhaul.client.hud.FoodHudOverlay;
 import com.trongthang.survivaloverhaul.client.hud.TemperatureHudOverlay;
 import com.trongthang.survivaloverhaul.client.hud.ThirstHudOverlay;
+import com.trongthang.survivaloverhaul.client.hud.BrokenHeartsHudOverlay;
 import com.trongthang.survivaloverhaul.config.ModConfig;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
@@ -46,6 +47,13 @@ public abstract class InGameHudMixin {
 
         if (ModConfig.enableBodyDamage) {
             BodyDamageHud.render(context, this.client, this.scaledWidth, this.scaledHeight);
+        }
+    }
+
+    @Inject(method = "renderStatusBars", at = @At("TAIL"))
+    private void survivalOverhaul$renderBrokenHearts(DrawContext context, CallbackInfo ci) {
+        if (ModConfig.enableBodyDamage) {
+            BrokenHeartsHudOverlay.render(context, this.client, this.scaledWidth, this.scaledHeight);
         }
     }
 

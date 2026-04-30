@@ -44,6 +44,9 @@ public class BodyDamageManager {
     public static final TrackedData<Float> RIGHT_FOOT_HEALTH = DataTracker.registerData(PlayerEntity.class,
             TrackedDataHandlerRegistry.FLOAT);
 
+    private static final java.util.UUID BROKEN_LIMB_MODIFIER_ID = java.util.UUID
+            .fromString("B2345678-1234-1234-1234-123456789012");
+
     public BodyDamageManager(LivingEntity entity) {
         this.entity = entity;
     }
@@ -81,20 +84,64 @@ public class BodyDamageManager {
         if (entity.age % 20 != 0)
             return;
 
+        if (ModConfig.enableBrokenLimbMaxHealthReduction) {
+            int brokenLimbs = 0;
+            for (BodyPart part : BodyPart.values()) {
+                if (getHealth(part) <= 0)
+                    brokenLimbs++;
+            }
+            var maxHealthAttr = entity
+                    .getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MAX_HEALTH);
+            if (maxHealthAttr != null) {
+                maxHealthAttr.removeModifier(BROKEN_LIMB_MODIFIER_ID);
+                if (brokenLimbs > 0) {
+                    float reduction = -(brokenLimbs * ModConfig.brokenLimbMaxHealthReduction);
+                    reduction = Math.max(-0.9f, reduction);
+                    maxHealthAttr.addPersistentModifier(new net.minecraft.entity.attribute.EntityAttributeModifier(
+                            BROKEN_LIMB_MODIFIER_ID, "Broken Limb Reduction", reduction,
+                            net.minecraft.entity.attribute.EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
+                }
+            }
+        } else {
+            var maxHealthAttr = entity
+                    .getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MAX_HEALTH);
+            if (maxHealthAttr != null) {
+                maxHealthAttr.removeModifier(BROKEN_LIMB_MODIFIER_ID);
+            }
+        }
+
+        if (ModConfig.enableLimbRegeneration) {
+            if (entity.getHealth() >= entity.getMaxHealth() * ModConfig.limbRegenPlayerHealthThreshold) {
+                for (BodyPart part : BodyPart.values()) {
+                    float currentLimbH = getHealth(part);
+                    float maxLimbH = part.getMaxHealth();
+                    if (currentLimbH > maxLimbH * ModConfig.limbRegenLimbHealthThreshold && currentLimbH < maxLimbH) {
+                        heal(part, ModConfig.limbRegenAmount);
+                    }
+                }
+            }
+        }
+
         float headRatio = getHealth(BodyPart.HEAD) / BodyPart.HEAD.getMaxHealth();
-        float leftLeg = getHealth(BodyPart.LEFT_LEG) / BodyPart.LEFT_LEG.getMaxHealth();
-        float rightLeg = getHealth(BodyPart.RIGHT_LEG) / BodyPart.RIGHT_LEG.getMaxHealth();
-        float leftFoot = getHealth(BodyPart.LEFT_FOOT) / BodyPart.LEFT_FOOT.getMaxHealth();
-        float rightFoot = getHealth(BodyPart.RIGHT_FOOT) / BodyPart.RIGHT_FOOT.getMaxHealth();
         float leftArm = getHealth(BodyPart.LEFT_ARM) / BodyPart.LEFT_ARM.getMaxHealth();
         float rightArm = getHealth(BodyPart.RIGHT_ARM) / BodyPart.RIGHT_ARM.getMaxHealth();
 
-        float minLegFoot = Math.min(Math.min(leftLeg, rightLeg), Math.min(leftFoot, rightFoot));
+        float combinedLegHealth = getHealth(BodyPart.LEFT_LEG) + getHealth(BodyPart.RIGHT_LEG)
+                + getHealth(BodyPart.LEFT_FOOT) + getHealth(BodyPart.RIGHT_FOOT);
 
         // ----- BROKEN LEGS/FEET => Slowness -----
-        if (minLegFoot <= 0f) {
+        if (combinedLegHealth <= ModConfig.legSlownessThreshold) {
             entity.addStatusEffect(new StatusEffectInstance(
                     StatusEffects.SLOWNESS, 60, 1, false, false, true));
+        }
+
+        // ----- HARD FALLING: wounded legs/feet => shows icon; damage amplification in
+        // Mixin -----
+        if (combinedLegHealth <= ModConfig.legHardFallingThreshold) {
+            int amplifier = combinedLegHealth <= 0f ? 2
+                    : (combinedLegHealth < ModConfig.legHardFallingThreshold / 2f ? 1 : 0);
+            entity.addStatusEffect(new StatusEffectInstance(
+                    ModEffects.HARD_FALLING, 40, amplifier, false, true, true));
         }
 
         // ----- BROKEN ARMS => Weakness + Mining Fatigue -----
@@ -126,14 +173,6 @@ public class BodyDamageManager {
             }
         }
 
-        // ----- HARD FALLING: wounded legs/feet => shows icon; damage amplification in
-        // Mixin -----
-        if (minLegFoot < 0.66f) {
-            int amplifier = minLegFoot <= 0f ? 2 : (minLegFoot < 0.33f ? 1 : 0);
-            entity.addStatusEffect(new StatusEffectInstance(
-                    ModEffects.HARD_FALLING, 40, amplifier, false, true, true));
-        }
-
         // ----- VULNERABILITY: wounded torso => shows icon; damage amplification in
         // Mixin -----
         float torsoRatio = getHealth(BodyPart.TORSO) / BodyPart.TORSO.getMaxHealth();
@@ -158,8 +197,12 @@ public class BodyDamageManager {
             for (StatusEffectInstance instance : entity.getStatusEffects()) {
                 if (instance.getEffectType()
                         .getCategory() == StatusEffectCategory.HARMFUL) {
-                    canApplyFeelingGood = false;
-                    break;
+                    net.minecraft.util.Identifier effectId = net.minecraft.registry.Registries.STATUS_EFFECT
+                            .getId(instance.getEffectType());
+                    if (effectId != null && effectId.getNamespace().equals("minecraft")) {
+                        canApplyFeelingGood = false;
+                        break;
+                    }
                 }
             }
 
@@ -175,7 +218,7 @@ public class BodyDamageManager {
 
             if (isHealthy && canApplyFeelingGood) {
                 entity.addStatusEffect(new StatusEffectInstance(
-                        ModEffects.FEELING_GOOD, 200, 0, false, false, true));
+                        ModEffects.FEELING_GOOD, 200, 0, false, false, false));
             }
         }
     }
@@ -200,10 +243,13 @@ public class BodyDamageManager {
     }
 
     public void applyDamage(DamageSource source, float amount) {
-        if (!ModConfig.enableBodyDamage || amount <= 0)
+        if (!ModConfig.enableBodyDamage || amount <= 0.01f)
             return;
 
         float limbDamage = amount * ModConfig.limbDamageMultiplier;
+        if (ModConfig.enableLimbDamageCap) {
+            limbDamage = Math.min(limbDamage, ModConfig.limbDamageCap);
+        }
 
         if (source.isIn(DamageTypeTags.IS_FALL) || source.isOf(DamageTypes.HOT_FLOOR)
                 || source.isOf(DamageTypes.SWEET_BERRY_BUSH)) {
@@ -251,7 +297,7 @@ public class BodyDamageManager {
     }
 
     public void damage(BodyPart part, float amount, boolean ignoreArmor) {
-        if (amount <= 0)
+        if (amount <= 0.01f)
             return;
 
         // Apply armor reduction for this specific limb unless it's partially ignoring
@@ -261,6 +307,19 @@ public class BodyDamageManager {
         } else {
             // Internal splash damage ignores 50% of the armor's protection
             amount *= (1.0f - getLimbArmorReduction(part) * 0.5f);
+        }
+
+        // Apply Resistance effect reduction
+        if (entity.hasStatusEffect(StatusEffects.RESISTANCE)) {
+            int amplifier = entity.getStatusEffect(StatusEffects.RESISTANCE).getAmplifier();
+            // Resistance reduces damage by 20% per level. 0=20%, 4=100%, 255=...
+            // Minecraft caps this at 100% (amplifier 4+)
+            float reduction = Math.min(1.0f, (amplifier + 1) * 0.2f);
+            amount *= (1.0f - reduction);
+        }
+
+        if (amount <= 0.01f) {
+            return;
         }
 
         setHealth(part, getHealth(part) - amount);

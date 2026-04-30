@@ -1,0 +1,9 @@
+{
+    "type": "minecraft:campfire_cooking",
+    "ingredient": {
+        "item": "survivaloverhaul:large_canteen"
+    },
+    "result": "survivaloverhaul:purified_large_canteen",
+    "experience": 0.3,
+    "cookingtime": 600
+}

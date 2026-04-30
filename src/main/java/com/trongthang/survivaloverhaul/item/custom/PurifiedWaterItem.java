@@ -31,7 +31,7 @@ public class PurifiedWaterItem extends Item {
 
         if (user instanceof PlayerEntity player) {
             if (!world.isClient) {
-                ((IThirstData) player).survivalOverhaul$getThirstManager().add(10, 5.0f);
+                ((IThirstData) player).survivalOverhaul$getThirstManager().add(4, 2.0f);
                 ModNetworking.sync((ServerPlayerEntity) player, (IThirstData) player);
             }
             if (!player.getAbilities().creativeMode) {

@@ -1,0 +1,6 @@
+{
+    "parent": "item/generated",
+    "textures": {
+        "layer0": "survivaloverhaul:item/large_canteen_purified"
+    }
+}

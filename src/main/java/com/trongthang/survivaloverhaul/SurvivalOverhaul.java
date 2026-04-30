@@ -28,11 +28,10 @@ public class SurvivalOverhaul implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		// if (!FabricLoader.getInstance().isModLoaded("welcometomyworld")) {
-		// throw new RuntimeException(
-		// "Survival Overhaul requires 'Welcome To My World' mod to function! Please
-		// install it.");
-		// }
+		if (!FabricLoader.getInstance().isModLoaded("welcometomyworld")) {
+			throw new RuntimeException(
+					"Survival Overhaul requires 'Welcome To My World' mod to function! Please install it.");
+		}
 
 		ModItemGroup.registerItemGroups();
 		ModItems.registerModItems();

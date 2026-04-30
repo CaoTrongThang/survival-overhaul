@@ -6,6 +6,8 @@ import com.trongthang.survivaloverhaul.item.custom.BandageItem;
 import com.trongthang.survivaloverhaul.item.custom.MedkitItem;
 import com.trongthang.survivaloverhaul.item.custom.PurifiedWaterBucketItem;
 import com.trongthang.survivaloverhaul.item.custom.PurifiedWaterItem;
+import com.trongthang.survivaloverhaul.item.custom.CanteenItem;
+import com.trongthang.survivaloverhaul.item.custom.EmptyCanteenItem;
 
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.item.Item;
@@ -23,6 +25,20 @@ public class ModItems {
         public static final Item PURIFIED_WATER_BUCKET = registerItem("purified_water_bucket",
                         new PurifiedWaterBucketItem(
                                         new FabricItemSettings().maxCount(1)));
+
+        public static final Item EMPTY_CANTEEN = registerItem("empty_canteen",
+                        new EmptyCanteenItem(new FabricItemSettings().maxCount(1)));
+        public static final Item CANTEEN = registerItem("canteen",
+                        new CanteenItem(new FabricItemSettings().maxCount(1).maxDamage(3), false));
+        public static final Item PURIFIED_CANTEEN = registerItem("purified_canteen",
+                        new CanteenItem(new FabricItemSettings().maxCount(1).maxDamage(3), true));
+
+        public static final Item EMPTY_LARGE_CANTEEN = registerItem("empty_large_canteen",
+                        new EmptyCanteenItem(new FabricItemSettings().maxCount(1)));
+        public static final Item LARGE_CANTEEN = registerItem("large_canteen",
+                        new CanteenItem(new FabricItemSettings().maxCount(1).maxDamage(6), false));
+        public static final Item PURIFIED_LARGE_CANTEEN = registerItem("purified_large_canteen",
+                        new CanteenItem(new FabricItemSettings().maxCount(1).maxDamage(6), true));
         public static final Item MEDKIT = registerItem("medkit",
                         new MedkitItem(new FabricItemSettings().maxCount(16)));
         public static final Item BANDAGE = registerItem("bandage",
@@ -49,5 +65,15 @@ public class ModItems {
 
         public static void registerModItems() {
                 SurvivalOverhaul.LOGGER.info("Registering Mod Items for " + SurvivalOverhaul.MOD_ID);
+
+                ((CanteenItem) CANTEEN).setEmptyVariant(EMPTY_CANTEEN);
+                ((CanteenItem) PURIFIED_CANTEEN).setEmptyVariant(EMPTY_CANTEEN);
+                ((CanteenItem) LARGE_CANTEEN).setEmptyVariant(EMPTY_LARGE_CANTEEN);
+                ((CanteenItem) PURIFIED_LARGE_CANTEEN).setEmptyVariant(EMPTY_LARGE_CANTEEN);
+
+                ((EmptyCanteenItem) EMPTY_CANTEEN).setFilledVariant(CANTEEN);
+                ((EmptyCanteenItem) EMPTY_CANTEEN).setPurifiedFilledVariant(PURIFIED_CANTEEN);
+                ((EmptyCanteenItem) EMPTY_LARGE_CANTEEN).setFilledVariant(LARGE_CANTEEN);
+                ((EmptyCanteenItem) EMPTY_LARGE_CANTEEN).setPurifiedFilledVariant(PURIFIED_LARGE_CANTEEN);
         }
 }

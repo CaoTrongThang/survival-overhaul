@@ -28,6 +28,8 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.ArmorItem;
+import net.minecraft.item.ArmorMaterials;
 import net.minecraft.item.BlockItem;
 import net.minecraft.block.Block;
 
@@ -84,9 +86,16 @@ public class TemperatureManager {
         World world = entity.getWorld();
         BlockPos pos = entity.getBlockPos();
 
-        // 1. Base Biome Temperature
+        // 1. Base Biome Temperature (Refined scaling for frozen biomes)
         float biomeTemp = world.getBiome(pos).value().getTemperature();
-        float ambient = 20.0f + (biomeTemp - 0.8f) * 20.0f;
+        float ambient;
+        if (biomeTemp < 0.15f) {
+            // 0.0 biomeTemp -> 10.0 ambient
+            // -1.0 biomeTemp -> -5.0 ambient (gentler than before)
+            ambient = 10.0f + biomeTemp * 15.0f;
+        } else {
+            ambient = 20.0f + (biomeTemp - 0.8f) * 20.0f;
+        }
 
         // 1a. Dimension Modifier
         ambient += getDimensionTemperatureModifier(world);
@@ -99,24 +108,32 @@ public class TemperatureManager {
         // 2. Environmental Modifiers
         if (!world.isDay()) {
             if (biomeTemp > 0.9f) {
-                ambient -= 15.0f; // Hot biomes get much colder at night
+                ambient -= 12.0f; // Hot biomes get colder at night
+            } else if (biomeTemp < 0.2f) {
+                ambient -= 3.0f; // cold biomes night penalty reduced
             } else {
                 ambient -= 5.0f;
             }
         }
-        if (world.isRaining())
-            ambient -= 5.0f;
+        if (world.isRaining() && world.isSkyVisible(pos)) {
+            ambient -= 5.0f; // Only colder if exposed to rain/snow
+        }
         if (entity.isSubmergedInWater())
             ambient -= 10.0f;
 
         // 2.5 Altitude and Depth Modifiers
         int y = pos.getY();
         if (y > 80) {
-            ambient -= (y - 80) * 0.05f; // Gets colder as you go higher
+            ambient -= (y - 80) * 0.02f; // Gets colder as you go higher, reduced harshness
         } else if (y < 40 && !world.isSkyVisible(pos)) {
-            ambient -= 2.0f; // Slightly cooler underground
-            if (y < 0) {
-                ambient -= (0 - y) * 0.05f; // Extra cold in deep depths
+            // Only apply underground "coolness" if the base temperature is warm.
+            // If it's already freezing outside, caves should be neutral or slightly warmer
+            // (shelter).
+            if (ambient > 15.0f) {
+                ambient -= 1.0f;
+            }
+            if (y < 0 && ambient > 10.0f) {
+                ambient -= (0 - y) * 0.02f;
             }
         }
 
@@ -128,6 +145,15 @@ public class TemperatureManager {
         ambient += getHeldItemInfluence(entity.getMainHandStack());
         ambient += getHeldItemInfluence(entity.getOffHandStack());
 
+        // 3.6 Armor Influence
+        for (ItemStack armor : entity.getArmorItems()) {
+            if (!armor.isEmpty() && armor.getItem() instanceof ArmorItem armorItem) {
+                if (armorItem.getMaterial() == ArmorMaterials.LEATHER) {
+                    ambient += 2.5f; // Leather gives some warmth
+                }
+            }
+        }
+
         // 3.8 Status Effect Influence
         if (entity.hasStatusEffect(ModEffects.WARMING)) {
             ambient += 35.0f;
@@ -136,7 +162,6 @@ public class TemperatureManager {
             ambient -= 35.0f;
         }
 
-        // 4. Special cases (Lava/Fire)
         if (entity.isInLava()) {
             ambient = MAX_TEMP;
         } else if (entity.isOnFire()) {
@@ -164,17 +189,19 @@ public class TemperatureManager {
                 distanceSq = 1.0;
 
             if (isHeatSource(state)) {
-                heat += 1.0f / (float) distanceSq;
+                float dist = (float) Math.sqrt(distanceSq);
+                heat += 1.0f / dist;
                 if (state.isOf(ModBlocks.BOILER)) {
-                    heat += 0.5f / (float) distanceSq; // Boilers are more effective
+                    heat += 0.5f / dist; // Boilers are more effective
                 }
             } else if (isColdSource(state)) {
+                float dist = (float) Math.sqrt(distanceSq);
                 if (state.isOf(Blocks.WATER)) {
-                    cold += 0.2f / (float) distanceSq; // Water provides a very weak cooling effect over distance
+                    cold += 0.2f / dist; // Water provides a very weak cooling effect over distance
                 } else {
-                    cold += 1.0f / (float) distanceSq;
+                    cold += 1.0f / dist;
                     if (state.isOf(ModBlocks.ICE_BOX)) {
-                        cold += 0.5f / (float) distanceSq; // Ice Boxes are more effective
+                        cold += 0.5f / dist; // Ice Boxes are more effective
                     }
                 }
             }
@@ -182,16 +209,22 @@ public class TemperatureManager {
 
         float totalModifier = 0;
         if (heat > 0)
-            totalModifier += Math.min(20.0f, heat * 10.0f);
+            totalModifier += Math.min(40.0f, heat * 18.0f); // Higher cap and even stronger multiplier
         if (cold > 0)
-            totalModifier -= Math.min(15.0f, cold * 10.0f);
+            totalModifier -= Math.min(15.0f, cold * 10.0f); // Lowered impact of cold blocks to prevent them from
+                                                            // drowning out fires
 
         return totalModifier;
     }
 
     private boolean isHeatSource(BlockState state) {
-        return state.isOf(Blocks.CAMPFIRE) || state.isOf(Blocks.LAVA) || state.isOf(Blocks.FIRE)
-                || (state.isOf(ModBlocks.BOILER) && state.get(BoilerBlock.LIT));
+        return (state.isOf(Blocks.CAMPFIRE) && state.contains(net.minecraft.state.property.Properties.LIT)
+                && state.get(net.minecraft.state.property.Properties.LIT))
+                || state.isOf(Blocks.LAVA) || state.isOf(Blocks.FIRE)
+                || (state.isOf(ModBlocks.BOILER) && state.get(BoilerBlock.LIT))
+                || ((state.isOf(Blocks.FURNACE) || state.isOf(Blocks.BLAST_FURNACE) || state.isOf(Blocks.SMOKER))
+                        && state.contains(net.minecraft.state.property.Properties.LIT)
+                        && state.get(net.minecraft.state.property.Properties.LIT));
     }
 
     private boolean isColdSource(BlockState state) {

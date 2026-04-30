@@ -61,7 +61,7 @@ public class ModConfig extends MidnightConfig {
     @Entry(category = "thirst", name = "Item Thirst Values")
     public static List<String> itemThirstValues = Arrays.asList(
             "minecraft:melon_slice=1", "minecraft:apple=1", "croptopia:coconut=1",
-            "minecraft:potion=2", "wilderwild:split_coconut=2",
+            "minecraft:potion=2", "wilderwild:split_coconut=2", "survivaloverhaul:purified_water=4",
             "minecraft:milk_bucket=3", "minecraft:suspicious_stew=3", "minecraft:mushroom_stew=3",
             "minecraft:beetroot_soup=3", "croptopia:blackberry_jam=3", "croptopia:blueberry_jam=3",
             "croptopia:cherry_jam=3", "croptopia:elderberry_jam=3", "croptopia:peach_jam=3",
@@ -101,6 +101,45 @@ public class ModConfig extends MidnightConfig {
 
     @Entry(category = "bodyparts", name = "Healthy Bonus Threshold (0.95 = 95% health then give the buff)", isSlider = true, min = 0.5f, max = 1.0f)
     public static float healthyBonusThreshold = 0.95f;
+
+    @Entry(category = "bodyparts", name = "Enable Headshot Multiplier")
+    public static boolean enableHeadshotMultiplier = true;
+
+    @Entry(category = "bodyparts", name = "Headshot Damage Multiplier", isSlider = true, min = 1.0f, max = 5.0f)
+    public static float headshotDamageMultiplier = 2.0f;
+
+    @Entry(category = "bodyparts", name = "Headshot Nullified by Helmet")
+    public static boolean nullifyHeadshotWithHelmet = true;
+
+    @Entry(category = "bodyparts", name = "Enable Broken Limb Max Health Reduction")
+    public static boolean enableBrokenLimbMaxHealthReduction = true;
+
+    @Entry(category = "bodyparts", name = "Broken Limb Max Health Reduction", isSlider = true, min = 0.0f, max = 1.0f)
+    public static float brokenLimbMaxHealthReduction = 0.1f;
+
+    @Entry(category = "bodyparts", name = "Enable Limb Regeneration")
+    public static boolean enableLimbRegeneration = true;
+
+    @Entry(category = "bodyparts", name = "Limb Regen Player Health Threshold", isSlider = true, min = 0.0f, max = 1.0f)
+    public static float limbRegenPlayerHealthThreshold = 0.8f;
+
+    @Entry(category = "bodyparts", name = "Limb Regen Limb Health Threshold", isSlider = true, min = 0.0f, max = 1.0f)
+    public static float limbRegenLimbHealthThreshold = 0.5f;
+
+    @Entry(category = "bodyparts", name = "Limb Regen Amount", isSlider = true, min = 0.0f, max = 5.0f)
+    public static float limbRegenAmount = 0.01f;
+
+    @Entry(category = "bodyparts", name = "Enable Limb Damage Cap")
+    public static boolean enableLimbDamageCap = true;
+
+    @Entry(category = "bodyparts", name = "Limb Damage Cap", min = 1, max = 100)
+    public static int limbDamageCap = 10;
+
+    @Entry(category = "bodyparts", name = "Leg Slowness Threshold", isSlider = true, min = 0.0f, max = 40.0f)
+    public static float legSlownessThreshold = 10.0f;
+
+    @Entry(category = "bodyparts", name = "Leg Hard Falling Threshold", isSlider = true, min = 0.0f, max = 40.0f)
+    public static float legHardFallingThreshold = 5.0f;
 
     public enum HudPosition {
         BOTTOM_RIGHT, BOTTOM_LEFT, TOP_RIGHT, TOP_LEFT, MIDDLE_RIGHT, MIDDLE_LEFT, TOP_MIDDLE
