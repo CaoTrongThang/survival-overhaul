@@ -15,6 +15,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.World;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.tag.DamageTypeTags;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.HitLocationDetector;
@@ -35,7 +36,17 @@ public abstract class LivingEntityMixin {
 
             if (!(stack.getItem() instanceof PurifiedWaterItem) &&
                     !(stack.getItem() instanceof PurifiedWaterBucketItem)) {
-                if (world.random.nextFloat() < ModConfig.dehydrationChanceFromItems) {
+
+                boolean givesThirst = false;
+                String itemId = Registries.ITEM.getId(stack.getItem()).toString();
+                for (String entry : ModConfig.itemThirstValues) {
+                    if (entry.startsWith(itemId + "=")) {
+                        givesThirst = true;
+                        break;
+                    }
+                }
+
+                if (!givesThirst && world.random.nextFloat() < ModConfig.dehydrationChanceFromItems) {
                     player.addStatusEffect(new StatusEffectInstance(
                             ModEffects.THIRST, 400, 0));
                 }

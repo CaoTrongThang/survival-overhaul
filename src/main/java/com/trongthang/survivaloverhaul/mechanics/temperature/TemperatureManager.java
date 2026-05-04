@@ -145,12 +145,14 @@ public class TemperatureManager {
         ambient += getHeldItemInfluence(entity.getMainHandStack());
         ambient += getHeldItemInfluence(entity.getOffHandStack());
 
-        // 3.6 Armor Influence
+        // 3.6 Armor Influence + Ocean Freezing Safety (merged loop)
+        boolean hasArmor = false;
         for (ItemStack armor : entity.getArmorItems()) {
             if (!armor.isEmpty() && armor.getItem() instanceof ArmorItem armorItem) {
                 if (armorItem.getMaterial() == ArmorMaterials.LEATHER) {
                     ambient += 2.5f; // Leather gives some warmth
                 }
+                hasArmor = true;
             }
         }
 
@@ -166,6 +168,15 @@ public class TemperatureManager {
             ambient = MAX_TEMP;
         } else if (entity.isOnFire()) {
             ambient = Math.max(ambient, 35.0f);
+        }
+
+        // 4. Ocean Freezing Safety: armored players with head above water in non-frozen
+        // biomes
+        // (Skip if Cooling effect is active — that's intentional cold)
+        if (hasArmor && biomeTemp >= 0.15f && !entity.isSubmergedInWater()
+                && !entity.hasStatusEffect(ModEffects.COOLING)
+                && ambient < 6.0f) {
+            ambient = 6.0f;
         }
 
         return MathHelper.clamp(ambient, MIN_TEMP, MAX_TEMP);
@@ -190,7 +201,8 @@ public class TemperatureManager {
 
             if (isHeatSource(state)) {
                 float dist = (float) Math.sqrt(distanceSq);
-                heat += 1.0f / dist;
+                float strength = state.isOf(Blocks.CAMPFIRE) ? 1.5f : 1.0f;
+                heat += strength / dist;
                 if (state.isOf(ModBlocks.BOILER)) {
                     heat += 0.5f / dist; // Boilers are more effective
                 }
@@ -199,7 +211,9 @@ public class TemperatureManager {
                 if (state.isOf(Blocks.WATER)) {
                     cold += 0.2f / dist; // Water provides a very weak cooling effect over distance
                 } else {
-                    cold += 1.0f / dist;
+                    float coldStrength = (state.isOf(Blocks.ICE) || state.isOf(Blocks.PACKED_ICE)
+                            || state.isOf(Blocks.BLUE_ICE)) ? 1.5f : 1.0f;
+                    cold += coldStrength / dist;
                     if (state.isOf(ModBlocks.ICE_BOX)) {
                         cold += 0.5f / dist; // Ice Boxes are more effective
                     }
@@ -211,8 +225,7 @@ public class TemperatureManager {
         if (heat > 0)
             totalModifier += Math.min(40.0f, heat * 18.0f); // Higher cap and even stronger multiplier
         if (cold > 0)
-            totalModifier -= Math.min(15.0f, cold * 10.0f); // Lowered impact of cold blocks to prevent them from
-                                                            // drowning out fires
+            totalModifier -= Math.min(25.0f, cold * 15.0f); // Increased impact of cold blocks
 
         return totalModifier;
     }

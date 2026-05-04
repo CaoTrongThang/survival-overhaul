@@ -5,7 +5,8 @@
 	"mixins": [
 		"LivingEntityMixin",
 		"PlayerEntityMixin",
-		"PotionItemMixin"
+		"PotionItemMixin",
+		"LivingEntityAccessor"
 	],
 	"client": [
 		"client.InGameHudMixin",

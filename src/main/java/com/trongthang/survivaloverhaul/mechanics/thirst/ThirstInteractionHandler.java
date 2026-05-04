@@ -25,12 +25,7 @@ import net.minecraft.world.World;
 public class ThirstInteractionHandler {
 
     public static void register() {
-        UseBlockCallback.EVENT.register(ThirstInteractionHandler::onUseBlock);
         UseItemCallback.EVENT.register(ThirstInteractionHandler::onUseItem);
-    }
-
-    private static ActionResult onUseBlock(PlayerEntity player, World world, Hand hand, BlockHitResult hitResult) {
-        return tryDrink(player, world, hand, false);
     }
 
     private static TypedActionResult<ItemStack> onUseItem(PlayerEntity player, World world, Hand hand) {

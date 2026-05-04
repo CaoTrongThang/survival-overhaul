@@ -52,7 +52,7 @@ public class ModConfig extends MidnightConfig {
     public static int thirstFromRain = 1;
 
     @Entry(category = "thirst", name = "Dehydration Chance from Sources", isSlider = true, min = 0.0f, max = 1.0f)
-    public static float dehydrationChanceFromSources = 0.2f;
+    public static float dehydrationChanceFromSources = 0.15f;
 
     // --- Items ---
     @Entry(category = "thirst", name = "Dehydration Chance from Items", isSlider = true, min = 0.0f, max = 1.0f)
