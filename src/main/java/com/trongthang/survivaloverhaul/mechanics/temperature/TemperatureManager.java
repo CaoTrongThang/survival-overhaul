@@ -49,6 +49,16 @@ public class TemperatureManager {
     public static final TrackedData<Integer> TEMPERATURE_STATE = DataTracker.registerData(PlayerEntity.class,
             TrackedDataHandlerRegistry.INTEGER);
 
+    // Breakdown components synced to the client for the Thermometer HUD
+    public static final TrackedData<Float> BIOME_CONTRIBUTION = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> ENVIRONMENT_MODIFIER = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> THERMAL_MODIFIER = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+    public static final TrackedData<Float> EQUIPMENT_MODIFIER = DataTracker.registerData(PlayerEntity.class,
+            TrackedDataHandlerRegistry.FLOAT);
+
     public static final float MIN_TEMP = 0.0f;
     public static final float MAX_TEMP = 40.0f;
     public static final float NORMAL_TEMP = 20.0f;
@@ -86,98 +96,112 @@ public class TemperatureManager {
         World world = entity.getWorld();
         BlockPos pos = entity.getBlockPos();
 
-        // 1. Base Biome Temperature (Refined scaling for frozen biomes)
+        // 1. Biome Base
+        // biomeTemp 0.0 (frozen) → ~10°, 0.8 (normal) → 20°, 2.0 (desert/nether) → ~28°
         float biomeTemp = world.getBiome(pos).value().getTemperature();
-        float ambient;
+        float biomeBase;
         if (biomeTemp < 0.15f) {
-            // 0.0 biomeTemp -> 10.0 ambient
-            // -1.0 biomeTemp -> -5.0 ambient (gentler than before)
-            ambient = 10.0f + biomeTemp * 15.0f;
+            biomeBase = 10.0f + biomeTemp * 15.0f;
         } else {
-            ambient = 20.0f + (biomeTemp - 0.8f) * 20.0f;
+            biomeBase = 20.0f + (biomeTemp - 0.8f) * 20.0f; // ×20: hot biomes (desert=44°, clamped to 40°→HOT)
         }
 
         // 1a. Dimension Modifier
-        ambient += getDimensionTemperatureModifier(world);
+        biomeBase += getDimensionTemperatureModifier(world);
 
-        // 1b. Season modifier (optional Fabric Seasons compat)
-        if (FabricSeasonsCompat.isLoaded()) {
-            ambient += FabricSeasonsCompat.getSeasonTempModifier(world);
+        // 1b. Season modifier
+        float seasonMod = 0f;
+        if (FabricSeasonsCompat.isLoaded() && world.getRegistryKey() == net.minecraft.world.World.OVERWORLD) {
+            seasonMod = FabricSeasonsCompat.getSeasonTempModifier(world);
+            biomeBase += seasonMod;
         }
 
+        float ambient = biomeBase;
+
         // 2. Environmental Modifiers
+        float envMod = 0f;
         if (!world.isDay()) {
             if (biomeTemp > 0.9f) {
-                ambient -= 12.0f; // Hot biomes get colder at night
+                envMod -= 12.0f; // Hot biomes cool dramatically at night (desert should go from HOT to WARM)
             } else if (biomeTemp < 0.2f) {
-                ambient -= 3.0f; // cold biomes night penalty reduced
+                envMod -= 1.0f; // Frozen biomes are already cold, barely changes
             } else {
-                ambient -= 5.0f;
+                envMod -= 2.0f; // Normal biomes slightly colder at night
             }
         }
         if (world.isRaining() && world.isSkyVisible(pos)) {
-            ambient -= 5.0f; // Only colder if exposed to rain/snow
+            envMod -= 2.0f;
         }
-        if (entity.isSubmergedInWater())
-            ambient -= 10.0f;
+        if (entity.isSubmergedInWater()) {
+            envMod -= 5.0f;
+        }
 
-        // 2.5 Altitude and Depth Modifiers
+        // Altitude: only above y=100, gentler rate
         int y = pos.getY();
-        if (y > 80) {
-            ambient -= (y - 80) * 0.02f; // Gets colder as you go higher, reduced harshness
-        } else if (y < 40 && !world.isSkyVisible(pos)) {
-            // Only apply underground "coolness" if the base temperature is warm.
-            // If it's already freezing outside, caves should be neutral or slightly warmer
-            // (shelter).
-            if (ambient > 15.0f) {
-                ambient -= 1.0f;
-            }
-            if (y < 0 && ambient > 10.0f) {
-                ambient -= (0 - y) * 0.02f;
-            }
+        if (y > 100) {
+            envMod -= (y - 100) * 0.015f;
         }
+
+        // Caves: slight warmth bonus (shelter from the elements)
+        if (y < 40 && !world.isSkyVisible(pos)) {
+            envMod += 2.0f;
+        }
+
+        // Env cap only applies to temperate biomes — prevents normal biome stacking to
+        // 0°.
+        // Extreme biomes (very hot or very cold) are allowed to swing harder.
+        if (biomeTemp >= 0.15f && biomeTemp <= 0.9f) {
+            envMod = Math.max(envMod, -8.0f);
+        }
+
+        ambient += envMod;
 
         // 3. Thermal Source Influence (Blocks)
         float thermalInfluence = calculateThermalSourceInfluence();
         ambient += thermalInfluence;
 
-        // 3.5 Held Items Influence
-        ambient += getHeldItemInfluence(entity.getMainHandStack());
-        ambient += getHeldItemInfluence(entity.getOffHandStack());
+        // 4. Equipment (held items + armor + effects)
+        float equipMod = 0f;
+        equipMod += getHeldItemInfluence(entity.getMainHandStack());
+        equipMod += getHeldItemInfluence(entity.getOffHandStack());
 
-        // 3.6 Armor Influence + Ocean Freezing Safety (merged loop)
         boolean hasArmor = false;
         for (ItemStack armor : entity.getArmorItems()) {
             if (!armor.isEmpty() && armor.getItem() instanceof ArmorItem armorItem) {
                 if (armorItem.getMaterial() == ArmorMaterials.LEATHER) {
-                    ambient += 2.5f; // Leather gives some warmth
+                    equipMod += 2.0f;
                 }
                 hasArmor = true;
             }
         }
 
-        // 3.8 Status Effect Influence
         if (entity.hasStatusEffect(ModEffects.WARMING)) {
-            ambient += 35.0f;
+            equipMod += 35.0f;
         }
         if (entity.hasStatusEffect(ModEffects.COOLING)) {
-            ambient -= 35.0f;
+            equipMod -= 45.0f;
         }
 
         if (entity.isInLava()) {
             ambient = MAX_TEMP;
+            equipMod = 0f;
         } else if (entity.isOnFire()) {
             ambient = Math.max(ambient, 35.0f);
         }
+        ambient += equipMod;
 
-        // 4. Ocean Freezing Safety: armored players with head above water in non-frozen
-        // biomes
-        // (Skip if Cooling effect is active — that's intentional cold)
+        // Safety floor for armored players in temperate biomes
         if (hasArmor && biomeTemp >= 0.15f && !entity.isSubmergedInWater()
                 && !entity.hasStatusEffect(ModEffects.COOLING)
-                && ambient < 6.0f) {
-            ambient = 6.0f;
+                && ambient < 8.0f) {
+            ambient = 8.0f;
         }
+
+        // Sync breakdown to client
+        entity.getDataTracker().set(BIOME_CONTRIBUTION, biomeBase);
+        entity.getDataTracker().set(ENVIRONMENT_MODIFIER, envMod);
+        entity.getDataTracker().set(THERMAL_MODIFIER, thermalInfluence);
+        entity.getDataTracker().set(EQUIPMENT_MODIFIER, equipMod);
 
         return MathHelper.clamp(ambient, MIN_TEMP, MAX_TEMP);
     }
@@ -201,7 +225,10 @@ public class TemperatureManager {
 
             if (isHeatSource(state)) {
                 float dist = (float) Math.sqrt(distanceSq);
-                float strength = state.isOf(Blocks.CAMPFIRE) ? 1.5f : 1.0f;
+                float strength = state.isOf(Blocks.CAMPFIRE) ? 1.5f
+                        : ((state.isOf(Blocks.FURNACE) || state.isOf(Blocks.BLAST_FURNACE) || state.isOf(Blocks.SMOKER))
+                                ? 0.5f
+                                : 1.0f);
                 heat += strength / dist;
                 if (state.isOf(ModBlocks.BOILER)) {
                     heat += 0.5f / dist; // Boilers are more effective
@@ -343,8 +370,8 @@ public class TemperatureManager {
                 player.getHungerManager().addExhaustion(0.1f); // Cold makes you hungrier
             }
             if (isHot()) {
-                ((IThirstData) player).survivalOverhaul$getThirstManager().addExhaustion(0.2f); // Heat makes you
-                                                                                                // thirstier
+                ((IThirstData) player).survivalOverhaul$getThirstManager().addExhaustion(0.15f); // Heat makes you
+                                                                                                 // thirstier
             }
         }
     }
@@ -354,21 +381,13 @@ public class TemperatureManager {
         TemperatureState next = current;
 
         // Priority states (Dying)
-        if (temp <= 5.0f) {
+        if (temp <= 0.0f) {
             next = TemperatureState.FREEZING;
-        } else if (temp >= 32.5f) {
+        } else if (temp <= 8.0f) {
+            next = TemperatureState.COLD;
+        } else if (temp >= 37.0f) {
             next = TemperatureState.HOT;
-        }
-        // Hysteresis for COLD
-        else if (temp < 14.0f) {
-            next = TemperatureState.COLD;
-        } else if (current == TemperatureState.COLD && temp < 15.5f) {
-            next = TemperatureState.COLD;
-        }
-        // Hysteresis for WARM
-        else if (temp > 26.0f) {
-            next = TemperatureState.WARM;
-        } else if (current == TemperatureState.WARM && temp > 24.5f) {
+        } else if (temp >= 32.0f) {
             next = TemperatureState.WARM;
         }
         // Otherwise Normal
@@ -410,6 +429,22 @@ public class TemperatureManager {
 
     public float getAmbientTemperature() {
         return entity.getDataTracker().get(AMBIENT_TEMPERATURE);
+    }
+
+    public float getBiomeContribution() {
+        return entity.getDataTracker().get(BIOME_CONTRIBUTION);
+    }
+
+    public float getEnvironmentModifier() {
+        return entity.getDataTracker().get(ENVIRONMENT_MODIFIER);
+    }
+
+    public float getThermalModifier() {
+        return entity.getDataTracker().get(THERMAL_MODIFIER);
+    }
+
+    public float getEquipmentModifier() {
+        return entity.getDataTracker().get(EQUIPMENT_MODIFIER);
     }
 
     public void setAmbientTemperature(float target) {

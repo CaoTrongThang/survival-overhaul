@@ -28,10 +28,11 @@ public class SurvivalOverhaul implements ModInitializer {
 
 	@Override
 	public void onInitialize() {
-		if (!FabricLoader.getInstance().isModLoaded("welcometomyworld")) {
-			throw new RuntimeException(
-					"Survival Overhaul requires 'Welcome To My World' mod to function! Please install it.");
-		}
+		// if (!FabricLoader.getInstance().isModLoaded("welcometomyworld")) {
+		// throw new RuntimeException(
+		// "Survival Overhaul requires 'Welcome To My World' mod to function! Please
+		// install it.");
+		// }
 
 		ModItemGroup.registerItemGroups();
 		ModItems.registerModItems();
@@ -41,10 +42,16 @@ public class SurvivalOverhaul implements ModInitializer {
 		FluidInit.init();
 		ModEffects.registerEffects();
 		ThirstInteractionHandler.register();
+		com.trongthang.survivaloverhaul.util.ModCauldronBehavior.register();
 		SoundsManager.registerSounds();
 
 		MidnightConfig.init(MOD_ID, ModConfig.class);
 		ModNetworking.registerServerReceivers();
+
+		if (FabricLoader.getInstance().isModLoaded("combatroll")) {
+			com.trongthang.survivaloverhaul.compat.CombatRollCompat.register();
+			LOGGER.info("Combat Roll compatibility registered!");
+		}
 
 		ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
 			ServerPlayerEntity player = handler.getPlayer();

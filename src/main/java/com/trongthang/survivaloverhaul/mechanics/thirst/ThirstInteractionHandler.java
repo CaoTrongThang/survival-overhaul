@@ -4,8 +4,8 @@ import com.trongthang.survivaloverhaul.config.ModConfig;
 import com.trongthang.survivaloverhaul.effect.ModEffects;
 import com.trongthang.survivaloverhaul.fluid.PurifiedWaterFluid;
 import com.trongthang.survivaloverhaul.networking.ModNetworking;
-import net.fabricmc.fabric.api.event.player.UseBlockCallback;
 import net.fabricmc.fabric.api.event.player.UseItemCallback;
+import net.minecraft.block.Blocks;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
@@ -25,6 +25,10 @@ import net.minecraft.world.World;
 public class ThirstInteractionHandler {
 
     public static void register() {
+        // Only UseItemCallback: fires when right-clicking air or after block
+        // interaction
+        // passes. Block-hit drinking is handled via the client-side packet in
+        // MinecraftClientMixin.
         UseItemCallback.EVENT.register(ThirstInteractionHandler::onUseItem);
     }
 
@@ -36,6 +40,10 @@ public class ThirstInteractionHandler {
         return TypedActionResult.pass(player.getStackInHand(hand));
     }
 
+    /**
+     * Called from the client-side packet (MinecraftClientMixin) on any right-click
+     * with empty hands, including when looking at a block.
+     */
     public static void requestDrink(ServerPlayerEntity player) {
         tryDrink(player, player.getWorld(), Hand.MAIN_HAND, true);
     }
@@ -54,7 +62,6 @@ public class ThirstInteractionHandler {
             return ActionResult.PASS;
         }
 
-        // --- Detect what the player is aiming at ---
         boolean drinkingRain = false;
         boolean drinkingWater = false;
         boolean isPurified = false;
@@ -64,14 +71,18 @@ public class ThirstInteractionHandler {
             drinkingRain = true;
         }
 
-        // 2. Check Fluid Raycast (if not already drinking rain or specifically looking
-        // at ground)
+        // 2. Check Fluid Raycast
         if (!drinkingRain && ModConfig.enableHandDrinking) {
             HitResult hit = player.raycast(5.0, 0.0f, true);
             if (hit.getType() == HitResult.Type.BLOCK) {
                 BlockPos pos = ((BlockHitResult) hit).getBlockPos();
                 FluidState fluidState = world.getFluidState(pos);
-                if (fluidState.isIn(FluidTags.WATER) && fluidState.isStill()) {
+                // Must be still water AND the block itself must be a water block (not just
+                // waterlogged). This prevents clicking a waterlogged chest from triggering a
+                // drink.
+                boolean isActualWaterBlock = world.getBlockState(pos).isOf(Blocks.WATER)
+                        || fluidState.getFluid() instanceof PurifiedWaterFluid;
+                if (fluidState.isIn(FluidTags.WATER) && fluidState.isStill() && isActualWaterBlock) {
                     drinkingWater = true;
                     isPurified = fluidState.getFluid() instanceof PurifiedWaterFluid;
                 }
@@ -82,9 +93,8 @@ public class ThirstInteractionHandler {
             return ActionResult.PASS;
         }
 
-        // --- Server-only: apply thirst and effects ---
+        // Server-only: apply thirst and effects
         if (!world.isClient) {
-            // Already have thirstManager from above
             float thirstToAdd = drinkingRain ? ModConfig.thirstFromRain : ModConfig.thirstFromWater;
             thirstManager.add((int) thirstToAdd, thirstToAdd * 0.05f);
 
@@ -100,7 +110,6 @@ public class ThirstInteractionHandler {
                     world.random.nextFloat() * 0.1f + 0.9f);
         }
 
-        // Client: animate the hand (runs on both sides, Fabric fires events on both)
         player.swingHand(hand, true);
         return ActionResult.SUCCESS;
     }

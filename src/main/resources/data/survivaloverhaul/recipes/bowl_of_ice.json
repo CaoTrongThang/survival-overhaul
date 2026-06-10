@@ -5,13 +5,7 @@
             "item": "minecraft:bowl"
         },
         {
-            "item": "minecraft:blue_ice"
-        },
-        {
             "item": "minecraft:packed_ice"
-        },
-        {
-            "item": "minecraft:snowball"
         }
     ],
     "result": {

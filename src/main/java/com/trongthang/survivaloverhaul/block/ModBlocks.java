@@ -15,33 +15,42 @@ import com.trongthang.survivaloverhaul.init.FluidInit;
 
 public class ModBlocks {
 
-    public static final Block PURIFIED_WATER = Registry.register(Registries.BLOCK,
-            new Identifier(SurvivalOverhaul.MOD_ID, "purified_water"),
-            new FluidBlock(FluidInit.PURIFIED_WATER,
-                    FabricBlockSettings.copy(net.minecraft.block.Blocks.WATER)));
+        public static final Block PURIFIED_WATER = Registry.register(Registries.BLOCK,
+                        new Identifier(SurvivalOverhaul.MOD_ID, "purified_water"),
+                        new FluidBlock(FluidInit.PURIFIED_WATER,
+                                        FabricBlockSettings.copy(net.minecraft.block.Blocks.WATER)));
 
-    private static Block registerBlock(String name, Block block) {
-        registerBlockItem(name, block);
-        return Registry.register(Registries.BLOCK, new Identifier(SurvivalOverhaul.MOD_ID, name), block);
-    }
+        // Registered without a BlockItem — players never hold it directly (same as
+        // vanilla cauldrons)
+        public static final Block PURIFIED_WATER_CAULDRON = Registry.register(Registries.BLOCK,
+                        new Identifier(SurvivalOverhaul.MOD_ID, "purified_water_cauldron"),
+                        new com.trongthang.survivaloverhaul.block.custom.PurifiedWaterCauldronBlock(
+                                        FabricBlockSettings.copy(net.minecraft.block.Blocks.CAULDRON),
+                                        com.trongthang.survivaloverhaul.util.ModCauldronBehavior.PURIFIED_WATER_CAULDRON_BEHAVIOR));
 
-    private static Item registerBlockItem(String name, Block block) {
-        return Registry.register(Registries.ITEM, new Identifier(SurvivalOverhaul.MOD_ID, name),
-                new BlockItem(block, new FabricItemSettings()));
-    }
+        private static Block registerBlock(String name, Block block) {
+                registerBlockItem(name, block);
+                return Registry.register(Registries.BLOCK, new Identifier(SurvivalOverhaul.MOD_ID, name), block);
+        }
 
-    public static final Block BOILER = registerBlock("boiler",
-            new com.trongthang.survivaloverhaul.block.custom.BoilerBlock(
-                    FabricBlockSettings.copy(net.minecraft.block.Blocks.IRON_BLOCK).nonOpaque()
-                            .luminance(state -> state.get(com.trongthang.survivaloverhaul.block.custom.BoilerBlock.LIT)
-                                    ? 13
-                                    : 0)));
+        private static Item registerBlockItem(String name, Block block) {
+                return Registry.register(Registries.ITEM, new Identifier(SurvivalOverhaul.MOD_ID, name),
+                                new BlockItem(block, new FabricItemSettings()));
+        }
 
-    public static final Block ICE_BOX = registerBlock("ice_box",
-            new com.trongthang.survivaloverhaul.block.custom.IceBoxBlock(
-                    FabricBlockSettings.copy(net.minecraft.block.Blocks.OAK_PLANKS).nonOpaque()));
+        public static final Block BOILER = registerBlock("boiler",
+                        new com.trongthang.survivaloverhaul.block.custom.BoilerBlock(
+                                        FabricBlockSettings.copy(net.minecraft.block.Blocks.IRON_BLOCK).nonOpaque()
+                                                        .luminance(state -> state.get(
+                                                                        com.trongthang.survivaloverhaul.block.custom.BoilerBlock.LIT)
+                                                                                        ? 13
+                                                                                        : 0)));
 
-    public static void registerModBlocks() {
-        SurvivalOverhaul.LOGGER.info("Registering Mod Blocks for " + SurvivalOverhaul.MOD_ID);
-    }
+        public static final Block ICE_BOX = registerBlock("ice_box",
+                        new com.trongthang.survivaloverhaul.block.custom.IceBoxBlock(
+                                        FabricBlockSettings.copy(net.minecraft.block.Blocks.OAK_PLANKS).nonOpaque()));
+
+        public static void registerModBlocks() {
+                SurvivalOverhaul.LOGGER.info("Registering Mod Blocks for " + SurvivalOverhaul.MOD_ID);
+        }
 }

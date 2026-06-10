@@ -40,6 +40,20 @@ public class ModEffects {
                                 statusEffect);
         }
 
+        private static net.minecraft.entity.effect.StatusEffect cachedBleedingEffect = null;
+        private static boolean checkedBleedingEffect = false;
+
+        public static void removeBleeding(net.minecraft.entity.LivingEntity entity) {
+                if (!checkedBleedingEffect) {
+                        cachedBleedingEffect = net.minecraft.registry.Registries.STATUS_EFFECT
+                                        .get(new net.minecraft.util.Identifier("bleed", "bleeding"));
+                        checkedBleedingEffect = true;
+                }
+                if (cachedBleedingEffect != null) {
+                        entity.removeStatusEffect(cachedBleedingEffect);
+                }
+        }
+
         public static void registerEffects() {
                 SurvivalOverhaul.LOGGER.info("Registering ModEffects for " + SurvivalOverhaul.MOD_ID);
         }

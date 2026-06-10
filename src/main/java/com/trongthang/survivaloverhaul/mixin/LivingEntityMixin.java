@@ -2,20 +2,16 @@ package com.trongthang.survivaloverhaul.mixin;
 
 import com.trongthang.survivaloverhaul.config.ModConfig;
 import com.trongthang.survivaloverhaul.effect.ModEffects;
-import com.trongthang.survivaloverhaul.item.custom.PurifiedWaterBucketItem;
-import com.trongthang.survivaloverhaul.item.custom.PurifiedWaterItem;
 import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
 import com.trongthang.survivaloverhaul.networking.ModNetworking;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
-import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.World;
 import net.minecraft.entity.EquipmentSlot;
-import net.minecraft.registry.Registries;
 import net.minecraft.registry.tag.DamageTypeTags;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.HitLocationDetector;
@@ -23,7 +19,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyDamageManager;
+import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin {
@@ -33,22 +32,19 @@ public abstract class LivingEntityMixin {
         if (!world.isClient && (Object) this instanceof PlayerEntity player) {
             ((IThirstData) player).survivalOverhaul$getThirstManager().applyItemThirst(stack);
             ModNetworking.sync((ServerPlayerEntity) player, (IThirstData) player);
+        }
+    }
 
-            if (!(stack.getItem() instanceof PurifiedWaterItem) &&
-                    !(stack.getItem() instanceof PurifiedWaterBucketItem)) {
-
-                boolean givesThirst = false;
-                String itemId = Registries.ITEM.getId(stack.getItem()).toString();
-                for (String entry : ModConfig.itemThirstValues) {
-                    if (entry.startsWith(itemId + "=")) {
-                        givesThirst = true;
-                        break;
+    @Inject(method = "heal", at = @At("HEAD"))
+    private void survivalOverhaul$onHeal(float amount, CallbackInfo ci) {
+        if (!((LivingEntity) (Object) this).getWorld().isClient && (Object) this instanceof PlayerEntity player) {
+            if (ModConfig.enableBodyDamage && ModConfig.limbHealOnPlayerHealMultiplier > 0.0f) {
+                BodyDamageManager manager = ((IBodyDamageData) player).survivalOverhaul$getBodyDamageManager();
+                if (manager != null) {
+                    float healPerPart = amount * ModConfig.limbHealOnPlayerHealMultiplier;
+                    for (BodyPart part : BodyPart.values()) {
+                        manager.heal(part, healPerPart);
                     }
-                }
-
-                if (!givesThirst && world.random.nextFloat() < ModConfig.dehydrationChanceFromItems) {
-                    player.addStatusEffect(new StatusEffectInstance(
-                            ModEffects.THIRST, 400, 0));
                 }
             }
         }

@@ -68,7 +68,7 @@ public class CanteenItem extends Item {
                 ModNetworking.sync((ServerPlayerEntity) player, (IThirstData) player);
             }
             if (!player.getAbilities().creativeMode) {
-                stack.damage(1, player, (p) -> p.sendToolBreakStatus(player.getActiveHand()));
+                stack.setDamage(stack.getDamage() + 1);
                 if (stack.getDamage() >= stack.getMaxDamage()) {
                     return new ItemStack(emptyVariant);
                 }
@@ -113,7 +113,7 @@ public class CanteenItem extends Item {
                     world.playSound(user, user.getX(), user.getY(), user.getZ(), SoundEvents.ITEM_BOTTLE_FILL,
                             SoundCategory.NEUTRAL, 1.0f, 1.0f);
 
-                    itemStack.setDamage(itemStack.getDamage() - 1);
+                    itemStack.setDamage(Math.max(0, itemStack.getDamage() - 1));
                     return TypedActionResult.success(itemStack, world.isClient());
                 }
             }
@@ -131,5 +131,10 @@ public class CanteenItem extends Item {
                 .translatable("tooltip.survivaloverhaul.canteen.uses", usesLeft, stack.getMaxDamage())
                 .formatted(Formatting.GRAY));
         super.appendTooltip(stack, world, tooltip, context);
+    }
+
+    @Override
+    public boolean isItemBarVisible(ItemStack stack) {
+        return false;
     }
 }

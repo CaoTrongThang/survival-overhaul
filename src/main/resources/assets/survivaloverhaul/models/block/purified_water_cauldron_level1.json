@@ -1,0 +1,11 @@
+{
+    "parent": "minecraft:block/template_cauldron_level1",
+    "textures": {
+        "bottom": "survivaloverhaul:block/cauldron_bottom",
+        "content": "minecraft:block/water_still",
+        "inside": "survivaloverhaul:block/cauldron_inner",
+        "particle": "survivaloverhaul:block/cauldron_side",
+        "side": "survivaloverhaul:block/cauldron_side",
+        "top": "survivaloverhaul:block/cauldron_top"
+    }
+}

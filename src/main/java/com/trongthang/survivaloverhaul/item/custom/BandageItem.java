@@ -1,13 +1,13 @@
 package com.trongthang.survivaloverhaul.item.custom;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.util.Hand;
 import net.minecraft.util.TypedActionResult;
 import net.minecraft.world.World;
-import net.minecraft.client.MinecraftClient;
-import com.trongthang.survivaloverhaul.client.screen.BodyDamageScreen;
 import com.trongthang.survivaloverhaul.config.ModConfig;
 
 public class BandageItem extends Item {
@@ -21,12 +21,18 @@ public class BandageItem extends Item {
 
         if (world.isClient) {
             if (ModConfig.enableBodyDamage) {
-                MinecraftClient.getInstance().setScreen(new BodyDamageScreen(true));
+                openBodyDamageScreen();
             }
         } else {
             user.getItemCooldownManager().set(this, 40);
         }
 
         return TypedActionResult.success(stack, world.isClient());
+    }
+
+    @Environment(EnvType.CLIENT)
+    private void openBodyDamageScreen() {
+        net.minecraft.client.MinecraftClient.getInstance()
+                .setScreen(new com.trongthang.survivaloverhaul.client.screen.BodyDamageScreen(true));
     }
 }

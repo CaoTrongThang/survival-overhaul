@@ -28,9 +28,9 @@ public class FabricSeasonsCompat {
             Season season = FabricSeasons.getCurrentSeason(world);
             return switch (season) {
                 case SPRING -> 0.0f; // Baseline
-                case SUMMER -> 5.0f; // Warmer
-                case FALL -> -3.0f; // Slightly cooler
-                case WINTER -> -8.0f; // Cold
+                case SUMMER -> 1.5f; // Warmer (Reduced from 2.5)
+                case FALL -> -0.5f; // Slightly cooler (Reduced from 1.5)
+                case WINTER -> -2.5f; // Cold (Reduced from 4.0)
             };
         } catch (Exception e) {
             return 0.0f;

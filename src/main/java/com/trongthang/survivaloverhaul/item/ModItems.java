@@ -43,20 +43,22 @@ public class ModItems {
                         new MedkitItem(new FabricItemSettings().maxCount(16)));
         public static final Item BANDAGE = registerItem("bandage",
                         new BandageItem(new FabricItemSettings().maxCount(16)));
+        public static final Item THERMOMETER = registerItem("thermometer",
+                        new Item(new FabricItemSettings().maxCount(1)));
 
         public static final Item BOWL_OF_FIRE = registerItem("bowl_of_fire",
                         new StewItem(new FabricItemSettings().maxCount(1).food(
                                         new FoodComponent.Builder().hunger(6).saturationModifier(0.3f)
                                                         .statusEffect(new StatusEffectInstance(
                                                                         ModEffects.WARMING,
-                                                                        3600, 0), 1.0f)
+                                                                        6000, 0), 1.0f)
                                                         .alwaysEdible().build())));
         public static final Item BOWL_OF_ICE = registerItem("bowl_of_ice",
                         new StewItem(new FabricItemSettings().maxCount(1).food(
                                         new FoodComponent.Builder().hunger(6).saturationModifier(0.3f)
                                                         .statusEffect(new StatusEffectInstance(
                                                                         ModEffects.COOLING,
-                                                                        3600, 0), 1.0f)
+                                                                        6000, 0), 1.0f)
                                                         .alwaysEdible().build())));
 
         private static Item registerItem(String name, Item item) {

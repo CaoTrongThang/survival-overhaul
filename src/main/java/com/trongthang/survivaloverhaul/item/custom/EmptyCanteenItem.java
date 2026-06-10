@@ -51,7 +51,7 @@ public class EmptyCanteenItem extends Item {
                 Item resultItem = (isPurified && purifiedFilledVariant != null) ? purifiedFilledVariant : filledVariant;
 
                 ItemStack filledStack = new ItemStack(resultItem);
-                filledStack.setDamage(resultItem.getMaxDamage() - 1);
+                filledStack.setDamage(0);
                 if (itemStack.getCount() == 1) {
                     return TypedActionResult.success(filledStack, world.isClient());
                 } else {

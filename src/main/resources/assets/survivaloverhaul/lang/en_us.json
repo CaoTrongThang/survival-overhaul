@@ -33,5 +33,7 @@
     "item.survivaloverhaul.large_canteen": "Large Canteen",
     "item.survivaloverhaul.purified_large_canteen": "Purified Large Canteen",
     "tooltip.survivaloverhaul.canteen.uses": "Uses left: %1$d/%2$d",
-    "tooltip.survivaloverhaul.thirst_gain": "💧 +%d Thirst"
+    "tooltip.survivaloverhaul.thirst_gain": "💧 +%d Thirst",
+    "item.survivaloverhaul.thermometer": "Thermometer",
+    "block.survivaloverhaul.purified_water_cauldron": "Purified Water Cauldron"
 }

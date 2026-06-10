@@ -23,6 +23,7 @@ public class ModItemGroup {
                         entries.add(ModItems.EMPTY_LARGE_CANTEEN);
                         entries.add(ModItems.LARGE_CANTEEN);
                         entries.add(ModItems.PURIFIED_LARGE_CANTEEN);
+                        entries.add(ModItems.THERMOMETER);
                         entries.add(ModItems.MEDKIT);
                         entries.add(ModItems.BANDAGE);
                         entries.add(ModBlocks.BOILER);

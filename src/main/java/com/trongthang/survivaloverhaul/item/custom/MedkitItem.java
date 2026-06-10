@@ -30,6 +30,9 @@ public class MedkitItem extends Item {
                 // Apply FEELING_GOOD effect (30 seconds)
                 player.addStatusEffect(new StatusEffectInstance(ModEffects.FEELING_GOOD, 600));
 
+                // Remove bleeding effect
+                ModEffects.removeBleeding(player);
+
                 // Add Cooldown (5 seconds)
                 player.getItemCooldownManager().set(this, 100);
 

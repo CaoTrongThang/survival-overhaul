@@ -5,12 +5,19 @@ import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyPart;
 import com.trongthang.survivaloverhaul.SurvivalOverhaul;
 import com.trongthang.survivaloverhaul.SoundsManager;
+import com.trongthang.survivaloverhaul.effect.ModEffects;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class ModNetworking {
+
+    public static void sendPoopSync(ServerPlayerEntity player, int poopLevel) {
+        PacketByteBuf buf = PacketByteBufs.create();
+        buf.writeInt(poopLevel);
+        ServerPlayNetworking.send(player, NetworkingConstants.POOP_SYNC_ID, buf);
+    }
 
     public static void sendThirstSync(ServerPlayerEntity player, int thirstLevel, float saturationLevel) {
         PacketByteBuf buf = PacketByteBufs.create();
@@ -44,6 +51,9 @@ public class ModNetworking {
 
                                 // Play sound
                                 SoundsManager.playRandomBandageSound(player.getWorld(), player);
+
+                                // Remove bleeding effect
+                                ModEffects.removeBleeding(player);
 
                                 // Consume 1 of the held item (the bandage)
                                 net.minecraft.item.ItemStack held = player.getMainHandStack();

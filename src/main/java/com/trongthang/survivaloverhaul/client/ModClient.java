@@ -10,6 +10,8 @@ import com.trongthang.survivaloverhaul.screen.ModScreenHandlers;
 
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
+import com.trongthang.survivaloverhaul.block.ModBlocks;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 
 public class ModClient {
@@ -31,5 +33,8 @@ public class ModClient {
         HandledScreens.register(
                 ModScreenHandlers.ICE_BOX_SCREEN_HANDLER,
                 IceBoxScreen::new);
+
+        ColorProviderRegistry.BLOCK.register((state, world, pos, tintIndex) -> 0x85f7ff,
+                ModBlocks.PURIFIED_WATER_CAULDRON);
     }
 }

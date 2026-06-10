@@ -11,6 +11,10 @@ public class ModConfig extends MidnightConfig {
     @Entry(category = "thirst", name = "Enable Thirst")
     public static boolean enableThirst = true;
 
+    // --- Poop ---
+    @Entry(category = "poop", name = "Enable Poop Bar")
+    public static boolean enablePoop = true;
+
     // --- Temperature ---
     @Entry(category = "temperature", name = "Enable Temperature")
     public static boolean enableTemperature = true;
@@ -27,7 +31,7 @@ public class ModConfig extends MidnightConfig {
 
     // --- Thirst Depletion ---
     @Entry(category = "thirst", name = "Thirst Depletion Multiplier", isSlider = true, min = 0.0f, max = 10.0f)
-    public static float thirstDepletionMultiplier = 2.0f;
+    public static float thirstDepletionMultiplier = 1.0f;
 
     @Entry(category = "thirst", name = "Thirst Exhaustion Threshold", isSlider = true, min = 0.1f, max = 10.0f)
     public static float thirstExhaustionThreshold = 4.0f;
@@ -99,8 +103,8 @@ public class ModConfig extends MidnightConfig {
     @Entry(category = "bodyparts", name = "Enable Healthy Bonus")
     public static boolean enableHealthyBonus = true;
 
-    @Entry(category = "bodyparts", name = "Healthy Bonus Threshold (0.95 = 95% health then give the buff)", isSlider = true, min = 0.5f, max = 1.0f)
-    public static float healthyBonusThreshold = 0.95f;
+    @Entry(category = "bodyparts", name = "Healthy Bonus Threshold (0.85 = 85% health then give the buff)", isSlider = true, min = 0.5f, max = 1.0f)
+    public static float healthyBonusThreshold = 0.85f;
 
     @Entry(category = "bodyparts", name = "Enable Headshot Multiplier")
     public static boolean enableHeadshotMultiplier = true;
@@ -110,12 +114,6 @@ public class ModConfig extends MidnightConfig {
 
     @Entry(category = "bodyparts", name = "Headshot Nullified by Helmet")
     public static boolean nullifyHeadshotWithHelmet = true;
-
-    @Entry(category = "bodyparts", name = "Enable Broken Limb Max Health Reduction")
-    public static boolean enableBrokenLimbMaxHealthReduction = true;
-
-    @Entry(category = "bodyparts", name = "Broken Limb Max Health Reduction", isSlider = true, min = 0.0f, max = 1.0f)
-    public static float brokenLimbMaxHealthReduction = 0.1f;
 
     @Entry(category = "bodyparts", name = "Enable Limb Regeneration")
     public static boolean enableLimbRegeneration = true;
@@ -128,6 +126,9 @@ public class ModConfig extends MidnightConfig {
 
     @Entry(category = "bodyparts", name = "Limb Regen Amount", isSlider = true, min = 0.0f, max = 5.0f)
     public static float limbRegenAmount = 0.01f;
+
+    @Entry(category = "bodyparts", name = "Limb Heal On Player Heal Multiplier", isSlider = true, min = 0.0f, max = 2.0f)
+    public static float limbHealOnPlayerHealMultiplier = 0.01f;
 
     @Entry(category = "bodyparts", name = "Enable Limb Damage Cap")
     public static boolean enableLimbDamageCap = true;
@@ -156,4 +157,17 @@ public class ModConfig extends MidnightConfig {
 
     @Entry(category = "bodyparts", name = "HUD Y Offset", isSlider = true, min = -500, max = 500)
     public static int hudYOffset = 0;
+
+    // --- Thermometer ---
+    @Entry(category = "temperature", name = "Thermometer HUD Position")
+    public static HudPosition thermometerHudPosition = HudPosition.BOTTOM_LEFT;
+
+    @Entry(category = "temperature", name = "Thermometer HUD Scale", isSlider = true, min = 0.5f, max = 3.0f)
+    public static float thermometerHudScale = 1.2f;
+
+    @Entry(category = "temperature", name = "Thermometer HUD X Offset", isSlider = true, min = -500, max = 500)
+    public static int thermometerHudXOffset = 0;
+
+    @Entry(category = "temperature", name = "Thermometer HUD Y Offset", isSlider = true, min = -500, max = 500)
+    public static int thermometerHudYOffset = 0;
 }

@@ -1,5 +1,6 @@
 package com.trongthang.survivaloverhaul.mechanics.bodyparts;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.data.DataTracker;
@@ -20,6 +21,7 @@ import net.minecraft.util.Hand;
 import com.trongthang.survivaloverhaul.mechanics.temperature.ITemperatureData;
 import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
 import com.trongthang.survivaloverhaul.mixin.LivingEntityAccessor;
+import com.trongthang.survivaloverhaul.compat.CombatRollCompat;
 import com.trongthang.survivaloverhaul.config.ModConfig;
 import com.trongthang.survivaloverhaul.effect.ModEffects;
 
@@ -43,9 +45,6 @@ public class BodyDamageManager {
             TrackedDataHandlerRegistry.FLOAT);
     public static final TrackedData<Float> RIGHT_FOOT_HEALTH = DataTracker.registerData(PlayerEntity.class,
             TrackedDataHandlerRegistry.FLOAT);
-
-    private static final java.util.UUID BROKEN_LIMB_MODIFIER_ID = java.util.UUID
-            .fromString("B2345678-1234-1234-1234-123456789012");
 
     public BodyDamageManager(LivingEntity entity) {
         this.entity = entity;
@@ -84,39 +83,25 @@ public class BodyDamageManager {
         if (entity.age % 20 != 0)
             return;
 
-        if (ModConfig.enableBrokenLimbMaxHealthReduction) {
-            int brokenLimbs = 0;
-            for (BodyPart part : BodyPart.values()) {
-                if (getHealth(part) <= 0)
-                    brokenLimbs++;
-            }
-            var maxHealthAttr = entity
-                    .getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MAX_HEALTH);
-            if (maxHealthAttr != null) {
-                maxHealthAttr.removeModifier(BROKEN_LIMB_MODIFIER_ID);
-                if (brokenLimbs > 0) {
-                    float reduction = -(brokenLimbs * ModConfig.brokenLimbMaxHealthReduction);
-                    reduction = Math.max(-0.9f, reduction);
-                    maxHealthAttr.addPersistentModifier(new net.minecraft.entity.attribute.EntityAttributeModifier(
-                            BROKEN_LIMB_MODIFIER_ID, "Broken Limb Reduction", reduction,
-                            net.minecraft.entity.attribute.EntityAttributeModifier.Operation.MULTIPLY_TOTAL));
-                }
-            }
-        } else {
-            var maxHealthAttr = entity
-                    .getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MAX_HEALTH);
-            if (maxHealthAttr != null) {
-                maxHealthAttr.removeModifier(BROKEN_LIMB_MODIFIER_ID);
-            }
+        // Clear any existing broken limb modifier from the legacy Broken Heart feature
+        var maxHealthAttr = entity
+                .getAttributeInstance(net.minecraft.entity.attribute.EntityAttributes.GENERIC_MAX_HEALTH);
+        if (maxHealthAttr != null) {
+            maxHealthAttr.removeModifier(java.util.UUID.fromString("B2345678-1234-1234-1234-123456789012"));
         }
 
         if (ModConfig.enableLimbRegeneration) {
             if (entity.getHealth() >= entity.getMaxHealth() * ModConfig.limbRegenPlayerHealthThreshold) {
+                float regenAmount = ModConfig.limbRegenAmount;
+                if (entity.hasStatusEffect(StatusEffects.REGENERATION)) {
+                    int level = entity.getStatusEffect(StatusEffects.REGENERATION).getAmplifier() + 1;
+                    regenAmount *= (1f + 0.2f * level);
+                }
                 for (BodyPart part : BodyPart.values()) {
                     float currentLimbH = getHealth(part);
                     float maxLimbH = part.getMaxHealth();
-                    if (currentLimbH > maxLimbH * ModConfig.limbRegenLimbHealthThreshold && currentLimbH < maxLimbH) {
-                        heal(part, ModConfig.limbRegenAmount);
+                    if (currentLimbH > 0 && currentLimbH < maxLimbH) {
+                        heal(part, regenAmount);
                     }
                 }
             }
@@ -242,9 +227,18 @@ public class BodyDamageManager {
         return true;
     }
 
+    private static Boolean combatRollLoaded = null;
+
     public void applyDamage(DamageSource source, float amount) {
         if (!ModConfig.enableBodyDamage || amount <= 0.01f)
             return;
+
+        if (combatRollLoaded == null) {
+            combatRollLoaded = FabricLoader.getInstance().isModLoaded("combatroll");
+        }
+        if (combatRollLoaded && CombatRollCompat.isRolling(entity)) {
+            return;
+        }
 
         float limbDamage = amount * ModConfig.limbDamageMultiplier;
         if (ModConfig.enableLimbDamageCap) {
@@ -338,8 +332,7 @@ public class BodyDamageManager {
             return 0f;
         }
 
-        // Linear reduction: each armor point reduces limb damage by 4% (max 80% per
-        // piece)
+        // Diminishing returns formula reaching up to 99%
         float protection = armorItem.getProtection();
 
         // Chestplate only offers partial protection to arms
@@ -347,7 +340,7 @@ public class BodyDamageManager {
             protection *= 0.5f;
         }
 
-        return Math.min(0.8f, protection * 0.04f);
+        return protection / (protection + 100.0f);
     }
 
     public void writeNbt(net.minecraft.nbt.NbtCompound nbt) {
