@@ -13,12 +13,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 public class ModNetworking {
 
-    public static void sendPoopSync(ServerPlayerEntity player, int poopLevel) {
-        PacketByteBuf buf = PacketByteBufs.create();
-        buf.writeInt(poopLevel);
-        ServerPlayNetworking.send(player, NetworkingConstants.POOP_SYNC_ID, buf);
-    }
-
     public static void sendThirstSync(ServerPlayerEntity player, int thirstLevel, float saturationLevel) {
         PacketByteBuf buf = PacketByteBufs.create();
         buf.writeInt(thirstLevel);

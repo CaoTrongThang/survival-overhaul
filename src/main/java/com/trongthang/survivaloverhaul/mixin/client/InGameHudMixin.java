@@ -2,7 +2,6 @@ package com.trongthang.survivaloverhaul.mixin.client;
 
 import com.trongthang.survivaloverhaul.client.hud.BodyDamageHud;
 import com.trongthang.survivaloverhaul.client.hud.FoodHudOverlay;
-import com.trongthang.survivaloverhaul.client.hud.PoopHudOverlay;
 import com.trongthang.survivaloverhaul.client.hud.TemperatureHudOverlay;
 import com.trongthang.survivaloverhaul.client.hud.ThermometerHudOverlay;
 import com.trongthang.survivaloverhaul.client.hud.ThirstHudOverlay;
@@ -38,9 +37,6 @@ public abstract class InGameHudMixin {
     private void survivalOverhaul$renderThirstBar(DrawContext context, CallbackInfo ci) {
         if (ModConfig.enableThirst) {
             ThirstHudOverlay.render(context, this.client, this.scaledWidth, this.scaledHeight);
-        }
-        if (ModConfig.enablePoop) {
-            PoopHudOverlay.render(context, this.client, this.scaledWidth, this.scaledHeight);
         }
         if (ModConfig.enableTemperature) {
             TemperatureHudOverlay.render(context, this.client, this.scaledWidth, this.scaledHeight);

@@ -11,10 +11,6 @@ public class ModConfig extends MidnightConfig {
     @Entry(category = "thirst", name = "Enable Thirst")
     public static boolean enableThirst = true;
 
-    // --- Poop ---
-    @Entry(category = "poop", name = "Enable Poop Bar")
-    public static boolean enablePoop = true;
-
     // --- Temperature ---
     @Entry(category = "temperature", name = "Enable Temperature")
     public static boolean enableTemperature = true;

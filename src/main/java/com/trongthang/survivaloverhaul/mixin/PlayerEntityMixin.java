@@ -5,15 +5,11 @@ import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
 import com.trongthang.survivaloverhaul.mechanics.thirst.ThirstManager;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.IBodyDamageData;
 import com.trongthang.survivaloverhaul.mechanics.bodyparts.BodyDamageManager;
-import com.trongthang.survivaloverhaul.mechanics.poop.IPoopData;
-import com.trongthang.survivaloverhaul.mechanics.poop.PoopManager;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.FoodComponent;
-import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -21,15 +17,13 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.trongthang.survivaloverhaul.mechanics.temperature.ITemperatureData;
 import com.trongthang.survivaloverhaul.mechanics.temperature.TemperatureManager;
 import com.trongthang.survivaloverhaul.mechanics.temperature.TemperatureState;
 
 @Mixin(PlayerEntity.class)
-public abstract class PlayerEntityMixin extends LivingEntity
-        implements IThirstData, IBodyDamageData, ITemperatureData, IPoopData {
+public abstract class PlayerEntityMixin extends LivingEntity implements IThirstData, IBodyDamageData, ITemperatureData {
 
     @Unique
     private final ThirstManager survivalOverhaul$thirstManager = new ThirstManager();
@@ -41,9 +35,6 @@ public abstract class PlayerEntityMixin extends LivingEntity
     @Unique
     private final TemperatureManager survivalOverhaul$temperatureManager = new TemperatureManager(
             (LivingEntity) (Object) this);
-
-    @Unique
-    private final PoopManager survivalOverhaul$poopManager = new PoopManager();
 
     protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
         super(entityType, world);
@@ -62,11 +53,6 @@ public abstract class PlayerEntityMixin extends LivingEntity
     @Override
     public TemperatureManager survivalOverhaul$getTemperatureManager() {
         return this.survivalOverhaul$temperatureManager;
-    }
-
-    @Override
-    public PoopManager survivalOverhaul$getPoopManager() {
-        return this.survivalOverhaul$poopManager;
     }
 
     @Inject(method = "initDataTracker", at = @At("TAIL"))
@@ -106,7 +92,6 @@ public abstract class PlayerEntityMixin extends LivingEntity
         this.survivalOverhaul$thirstManager.readNbt(nbt);
         this.survivalOverhaul$bodyDamageManager.readNbt(nbt);
         this.survivalOverhaul$temperatureManager.readNbt(nbt);
-        this.survivalOverhaul$poopManager.readNbt(nbt);
     }
 
     @Inject(method = "writeCustomDataToNbt", at = @At("TAIL"))
@@ -114,17 +99,6 @@ public abstract class PlayerEntityMixin extends LivingEntity
         this.survivalOverhaul$thirstManager.writeNbt(nbt);
         this.survivalOverhaul$bodyDamageManager.writeNbt(nbt);
         this.survivalOverhaul$temperatureManager.writeNbt(nbt);
-        this.survivalOverhaul$poopManager.writeNbt(nbt);
-    }
-
-    @Inject(method = "eatFood", at = @At("RETURN"))
-    private void survivalOverhaul$onEatFood(World world, ItemStack stack, CallbackInfoReturnable<ItemStack> cir) {
-        if (!world.isClient && ModConfig.enablePoop && stack.isFood()) {
-            FoodComponent food = stack.getItem().getFoodComponent();
-            if (food != null) {
-                this.survivalOverhaul$poopManager.onFoodEaten((PlayerEntity) (Object) this, food.getHunger());
-            }
-        }
     }
 
     @Inject(method = "applyDamage", at = @At("HEAD"))
@@ -134,4 +108,13 @@ public abstract class PlayerEntityMixin extends LivingEntity
         }
     }
 
+    @Inject(method = "addExhaustion", at = @At("TAIL"))
+    private void survivalOverhaul$addExhaustion(float exhaustion, CallbackInfo ci) {
+        if (!this.getWorld().isClient && ModConfig.enableThirst) {
+            float addedExhaustion = exhaustion * 1.0F * ModConfig.thirstDepletionMultiplier;
+            // Give 100% of hunger exhaustion to thirst by default, multiplied by config
+            this.survivalOverhaul$getThirstManager()
+                    .addExhaustion(addedExhaustion);
+        }
+    }
 }
