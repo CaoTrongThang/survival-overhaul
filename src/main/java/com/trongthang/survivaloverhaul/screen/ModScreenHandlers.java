@@ -18,6 +18,13 @@ public class ModScreenHandlers {
             new Identifier(SurvivalOverhaul.MOD_ID, "ice_box"),
             new ScreenHandlerType<IceBoxScreenHandler>(IceBoxScreenHandler::new, FeatureSet.empty()));
 
+    public static final net.minecraft.screen.ScreenHandlerType<SewingTableScreenHandler> SEWING_TABLE_SCREEN_HANDLER = Registry
+            .register(
+                    Registries.SCREEN_HANDLER,
+                    new Identifier(SurvivalOverhaul.MOD_ID, "sewing_table"),
+                    new net.minecraft.screen.ScreenHandlerType<SewingTableScreenHandler>(SewingTableScreenHandler::new,
+                            net.minecraft.resource.featuretoggle.FeatureSet.empty()));
+
     public static void registerScreenHandlers() {
         SurvivalOverhaul.LOGGER.info("Registering Screen Handlers for " + SurvivalOverhaul.MOD_ID);
     }

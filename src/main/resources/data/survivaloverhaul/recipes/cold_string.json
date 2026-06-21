@@ -1,0 +1,19 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "X",
+        "S"
+    ],
+    "key": {
+        "X": {
+            "item": "minecraft:snowball"
+        },
+        "S": {
+            "item": "minecraft:string"
+        }
+    },
+    "result": {
+        "item": "survivaloverhaul:cold_string",
+        "count": 1
+    }
+}

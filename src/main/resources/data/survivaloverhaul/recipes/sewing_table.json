@@ -1,0 +1,23 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "SSS",
+        "PXP",
+        "PPP"
+    ],
+    "key": {
+        "S": {
+            "item": "minecraft:string"
+        },
+        "P": {
+            "tag": "minecraft:planks"
+        },
+        "X": {
+            "item": "minecraft:shears"
+        }
+    },
+    "result": {
+        "item": "survivaloverhaul:sewing_table",
+        "count": 1
+    }
+}

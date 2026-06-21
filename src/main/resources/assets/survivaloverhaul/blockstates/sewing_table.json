@@ -1,0 +1,19 @@
+{
+    "variants": {
+        "facing=north": {
+            "model": "survivaloverhaul:block/sewing_table"
+        },
+        "facing=south": {
+            "model": "survivaloverhaul:block/sewing_table",
+            "y": 180
+        },
+        "facing=west": {
+            "model": "survivaloverhaul:block/sewing_table",
+            "y": 270
+        },
+        "facing=east": {
+            "model": "survivaloverhaul:block/sewing_table",
+            "y": 90
+        }
+    }
+}

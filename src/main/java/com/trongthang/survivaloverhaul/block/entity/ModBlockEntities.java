@@ -19,6 +19,15 @@ public class ModBlockEntities {
             new Identifier(SurvivalOverhaul.MOD_ID, "ice_box_be"),
             FabricBlockEntityTypeBuilder.create(IceBoxBlockEntity::new, ModBlocks.ICE_BOX).build());
 
+    public static final BlockEntityType<com.trongthang.survivaloverhaul.block.entity.SewingTableBlockEntity> SEWING_TABLE_BLOCK_ENTITY = Registry
+            .register(
+                    Registries.BLOCK_ENTITY_TYPE,
+                    new Identifier(SurvivalOverhaul.MOD_ID, "sewing_table_be"),
+                    FabricBlockEntityTypeBuilder
+                            .create(com.trongthang.survivaloverhaul.block.entity.SewingTableBlockEntity::new,
+                                    ModBlocks.SEWING_TABLE)
+                            .build());
+
     public static void registerBlockEntities() {
         SurvivalOverhaul.LOGGER.info("Registering Block Entities for " + SurvivalOverhaul.MOD_ID);
     }

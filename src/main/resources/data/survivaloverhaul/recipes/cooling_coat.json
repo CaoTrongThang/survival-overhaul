@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "CCC",
+        "CSC",
+        "CCC"
+    ],
+    "key": {
+        "C": {
+            "item": "survivaloverhaul:cold_string"
+        },
+        "S": {
+            "item": "minecraft:string"
+        }
+    },
+    "result": {
+        "item": "survivaloverhaul:cooling_coat",
+        "count": 1
+    }
+}

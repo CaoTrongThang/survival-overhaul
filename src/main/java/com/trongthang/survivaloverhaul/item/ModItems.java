@@ -8,6 +8,8 @@ import com.trongthang.survivaloverhaul.item.custom.PurifiedWaterBucketItem;
 import com.trongthang.survivaloverhaul.item.custom.PurifiedWaterItem;
 import com.trongthang.survivaloverhaul.item.custom.CanteenItem;
 import com.trongthang.survivaloverhaul.item.custom.EmptyCanteenItem;
+import com.trongthang.survivaloverhaul.item.custom.WarmStringItem;
+import com.trongthang.survivaloverhaul.item.custom.CoatItem;
 
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.item.Item;
@@ -60,6 +62,15 @@ public class ModItems {
                                                                         ModEffects.COOLING,
                                                                         6000, 0), 1.0f)
                                                         .alwaysEdible().build())));
+
+        public static final Item WARM_STRING = registerItem("warm_string",
+                        new WarmStringItem(new FabricItemSettings()));
+        public static final Item COLD_STRING = registerItem("cold_string",
+                        new com.trongthang.survivaloverhaul.item.custom.ColdStringItem(new FabricItemSettings()));
+        public static final Item WARMING_COAT = registerItem("warming_coat",
+                        new CoatItem("warming", new FabricItemSettings().maxCount(16)));
+        public static final Item COOLING_COAT = registerItem("cooling_coat",
+                        new CoatItem("cooling", new FabricItemSettings().maxCount(16)));
 
         private static Item registerItem(String name, Item item) {
                 return Registry.register(Registries.ITEM, new Identifier(SurvivalOverhaul.MOD_ID, name), item);

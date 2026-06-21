@@ -1,0 +1,20 @@
+{
+    "type": "minecraft:crafting_shaped",
+    "pattern": [
+        "WWW",
+        "WSW",
+        "WWW"
+    ],
+    "key": {
+        "W": {
+            "item": "survivaloverhaul:warm_string"
+        },
+        "S": {
+            "item": "minecraft:string"
+        }
+    },
+    "result": {
+        "item": "survivaloverhaul:warming_coat",
+        "count": 1
+    }
+}

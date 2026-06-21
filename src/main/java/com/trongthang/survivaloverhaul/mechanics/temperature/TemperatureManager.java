@@ -171,6 +171,18 @@ public class TemperatureManager {
                 if (armorItem.getMaterial() == ArmorMaterials.LEATHER) {
                     equipMod += 2.0f;
                 }
+
+                // Sewing Table Coats
+                NbtCompound nbt = armor.getSubNbt("survivaloverhaul");
+                if (nbt != null && nbt.contains("CoatType")) {
+                    String coatType = nbt.getString("CoatType");
+                    if (coatType.equals("warming")) {
+                        equipMod += 3.0f;
+                    } else if (coatType.equals("cooling")) {
+                        equipMod -= 3.0f;
+                    }
+                }
+
                 hasArmor = true;
             }
         }

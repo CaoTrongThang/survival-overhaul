@@ -50,6 +50,10 @@ public class ModBlocks {
                         new com.trongthang.survivaloverhaul.block.custom.IceBoxBlock(
                                         FabricBlockSettings.copy(net.minecraft.block.Blocks.OAK_PLANKS).nonOpaque()));
 
+        public static final Block SEWING_TABLE = registerBlock("sewing_table",
+                        new com.trongthang.survivaloverhaul.block.custom.SewingTableBlock(
+                                        FabricBlockSettings.copy(net.minecraft.block.Blocks.OAK_PLANKS).nonOpaque()));
+
         public static void registerModBlocks() {
                 SurvivalOverhaul.LOGGER.info("Registering Mod Blocks for " + SurvivalOverhaul.MOD_ID);
         }
