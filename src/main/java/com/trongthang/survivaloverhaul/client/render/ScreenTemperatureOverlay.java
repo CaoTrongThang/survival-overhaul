@@ -20,7 +20,7 @@ public class ScreenTemperatureOverlay {
     private static long lastRenderTime = 0;
 
     public static void render(DrawContext context, float tickDelta) {
-        if (!ModConfig.enableTemperature)
+        if (!ModConfig.enableTemperature || !ModConfig.enableTemperatureOverlay)
             return;
         MinecraftClient client = MinecraftClient.getInstance();
         if (client.player == null || client.options.hudHidden)

@@ -15,6 +15,9 @@ public class ModConfig extends MidnightConfig {
     @Entry(category = "temperature", name = "Enable Temperature")
     public static boolean enableTemperature = true;
 
+    @Entry(category = "temperature", name = "Enable Temperature Overlay")
+    public static boolean enableTemperatureOverlay = true;
+
     @Entry(category = "temperature", name = "Temperature Change Speed", isSlider = true, min = 0.01f, max = 1.0f)
     public static float temperatureChangeSpeed = 0.1f;
 

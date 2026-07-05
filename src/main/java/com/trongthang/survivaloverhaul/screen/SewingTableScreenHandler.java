@@ -79,8 +79,15 @@ public class SewingTableScreenHandler extends ScreenHandler {
             ItemStack originalStack = slot.getStack();
             newStack = originalStack.copy();
             if (invSlot < 3) {
-                if (!this.insertItem(originalStack, 3, this.slots.size(), true)) {
-                    return ItemStack.EMPTY;
+                if (invSlot == 2) {
+                    if (!this.insertItem(originalStack, 3, this.slots.size(), true)) {
+                        return ItemStack.EMPTY;
+                    }
+                    slot.onTakeItem(player, originalStack);
+                } else {
+                    if (!this.insertItem(originalStack, 3, this.slots.size(), true)) {
+                        return ItemStack.EMPTY;
+                    }
                 }
             } else {
                 if (originalStack.getItem() instanceof ArmorItem) {

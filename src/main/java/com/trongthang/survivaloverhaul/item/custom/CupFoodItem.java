@@ -1,42 +1,26 @@
 package com.trongthang.survivaloverhaul.item.custom;
 
-import com.trongthang.survivaloverhaul.mechanics.thirst.IThirstData;
-import com.trongthang.survivaloverhaul.networking.ModNetworking;
-import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.stat.Stats;
-import net.minecraft.util.Hand;
-import net.minecraft.util.TypedActionResult;
 import net.minecraft.util.UseAction;
 import net.minecraft.world.World;
 
-public class PurifiedWaterItem extends Item {
-    public PurifiedWaterItem(Settings settings) {
+public class CupFoodItem extends Item {
+    public CupFoodItem(Settings settings) {
         super(settings);
     }
 
     @Override
     public ItemStack finishUsing(ItemStack stack, World world, LivingEntity user) {
-        if (user instanceof ServerPlayerEntity serverPlayer) {
-            Criteria.CONSUME_ITEM.trigger(serverPlayer, stack);
-            serverPlayer.incrementStat(Stats.USED.getOrCreateStat(this));
-        }
-
+        ItemStack resultStack = super.finishUsing(stack, world, user);
         if (user instanceof PlayerEntity player) {
-            if (!world.isClient) {
-                ((IThirstData) player).survivalOverhaul$getThirstManager().add(4, 2.0f);
-                ModNetworking.sync((ServerPlayerEntity) player, (IThirstData) player);
-            }
             if (!player.getAbilities().creativeMode) {
-                stack.decrement(1);
-                if (stack.isEmpty()) {
+                if (resultStack.isEmpty()) {
                     return new ItemStack(Items.GLASS_BOTTLE);
                 }
                 ItemStack glassBottle = new ItemStack(Items.GLASS_BOTTLE);
@@ -45,12 +29,7 @@ public class PurifiedWaterItem extends Item {
                 }
             }
         }
-        return stack;
-    }
-
-    @Override
-    public int getMaxUseTime(ItemStack stack) {
-        return 32;
+        return resultStack;
     }
 
     @Override
@@ -66,11 +45,5 @@ public class PurifiedWaterItem extends Item {
     @Override
     public SoundEvent getEatSound() {
         return SoundEvents.ENTITY_GENERIC_DRINK;
-    }
-
-    @Override
-    public TypedActionResult<ItemStack> use(World world, PlayerEntity user, Hand hand) {
-        user.setCurrentHand(hand);
-        return TypedActionResult.consume(user.getStackInHand(hand));
     }
 }

@@ -10,6 +10,7 @@ import com.trongthang.survivaloverhaul.item.custom.CanteenItem;
 import com.trongthang.survivaloverhaul.item.custom.EmptyCanteenItem;
 import com.trongthang.survivaloverhaul.item.custom.WarmStringItem;
 import com.trongthang.survivaloverhaul.item.custom.CoatItem;
+import com.trongthang.survivaloverhaul.item.custom.CupFoodItem;
 
 import net.fabricmc.fabric.api.item.v1.FabricItemSettings;
 import net.minecraft.item.Item;
@@ -23,7 +24,7 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 public class ModItems {
 
         public static final Item PURIFIED_WATER = registerItem("purified_water",
-                        new PurifiedWaterItem(new FabricItemSettings().maxCount(1)));
+                        new PurifiedWaterItem(new FabricItemSettings().maxCount(16)));
         public static final Item PURIFIED_WATER_BUCKET = registerItem("purified_water_bucket",
                         new PurifiedWaterBucketItem(
                                         new FabricItemSettings().maxCount(1)));
@@ -61,6 +62,22 @@ public class ModItems {
                                                         .statusEffect(new StatusEffectInstance(
                                                                         ModEffects.COOLING,
                                                                         6000, 0), 1.0f)
+                                                        .alwaysEdible().build())));
+
+        public static final Item CUP_OF_FIRE = registerItem("cup_of_fire",
+                        new CupFoodItem(new FabricItemSettings().maxCount(1).food(
+                                        new FoodComponent.Builder().hunger(3).saturationModifier(0.15f)
+                                                        .statusEffect(new StatusEffectInstance(
+                                                                        ModEffects.MILD_WARMING,
+                                                                        3000, 0), 1.0f)
+                                                        .alwaysEdible().build())));
+
+        public static final Item CUP_OF_ICE = registerItem("cup_of_ice",
+                        new CupFoodItem(new FabricItemSettings().maxCount(1).food(
+                                        new FoodComponent.Builder().hunger(3).saturationModifier(0.15f)
+                                                        .statusEffect(new StatusEffectInstance(
+                                                                        ModEffects.MILD_COOLING,
+                                                                        3000, 0), 1.0f)
                                                         .alwaysEdible().build())));
 
         public static final Item WARM_STRING = registerItem("warm_string",

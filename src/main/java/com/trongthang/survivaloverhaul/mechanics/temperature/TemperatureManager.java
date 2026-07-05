@@ -193,6 +193,12 @@ public class TemperatureManager {
         if (entity.hasStatusEffect(ModEffects.COOLING)) {
             equipMod -= 45.0f;
         }
+        if (entity.hasStatusEffect(ModEffects.MILD_WARMING)) {
+            equipMod += 15.0f;
+        }
+        if (entity.hasStatusEffect(ModEffects.MILD_COOLING)) {
+            equipMod -= 15.0f;
+        }
 
         if (entity.isInLava()) {
             ambient = MAX_TEMP;
@@ -200,6 +206,15 @@ public class TemperatureManager {
         } else if (entity.isOnFire()) {
             ambient = Math.max(ambient, 35.0f);
         }
+
+        if (entity.hasStatusEffect(net.minecraft.entity.effect.StatusEffects.FIRE_RESISTANCE)) {
+            float tempBeforeFireRes = ambient + equipMod;
+            if (tempBeforeFireRes > 20.0f) {
+                float fireResReduction = Math.min(15.0f, tempBeforeFireRes - 20.0f);
+                equipMod -= fireResReduction;
+            }
+        }
+
         ambient += equipMod;
 
         // Safety floor for armored players in temperate biomes

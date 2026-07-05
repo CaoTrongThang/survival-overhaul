@@ -30,6 +30,8 @@ public class ModItemGroup {
                         entries.add(ModBlocks.ICE_BOX);
                         entries.add(ModItems.BOWL_OF_FIRE);
                         entries.add(ModItems.BOWL_OF_ICE);
+                        entries.add(ModItems.CUP_OF_FIRE);
+                        entries.add(ModItems.CUP_OF_ICE);
                         entries.add(ModItems.WARM_STRING);
                         entries.add(ModItems.COLD_STRING);
                         entries.add(ModItems.WARMING_COAT);
